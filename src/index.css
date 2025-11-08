@@ -25,7 +25,7 @@
   --color-on-background: #e0e0e0;
   --color-on-surface: #ffffff;
   --color-on-primary: #ffffff;
-  --color-on-secondary: #ffffff;
+  --color-on-secondary: #111827; /* Fixed: White to dark gray for contrast */
   --color-danger: #cf6679;
 }
 body {
