@@ -104,9 +104,10 @@ Dieses Projekt ist für ein einfaches Deployment auf [Vercel](https://vercel.com
 
 1.  **Projekt importieren:** Importieren Sie Ihr Git-Repository in Vercel.
 2.  **Konfiguration:**
-    *   **`vercel.json`:** Die `vercel.json`-Datei im Repository ist entscheidend. Sie teilt Vercel explizit mit, wie das Projekt behandelt werden soll.
-    *   **Babel Standalone:** Da dieses Projekt "build-less" ist und JSX direkt an den Browser sendet, wird Babel Standalone (`index.html`) verwendet, um den JSX-Code "on-the-fly" in gültiges JavaScript umzuwandeln.
-    *   **Explizite Importe:** Der entscheidende Schritt ist, in **allen `.tsx` und `.ts` Dateien** die lokalen Importe mit der korrekten Dateiendung zu versehen (z.B. `import App from './App.tsx'`). Dies ist notwendig, damit der Browser die exakte Datei anfordert und der Server sie mit dem korrekten MIME-Typ ausliefern kann.
+    *   **`vercel.json`:** Die `vercel.json`-Datei im Repository ist entscheidend. Sie teilt Vercel explizit mit, wie das Projekt behandelt werden soll (kein Framework, statisches Output-Verzeichnis, korrekte Header für `.tsx`-Dateien).
+    *   **Babel Standalone:** Da dieses Projekt "build-less" ist und JSX/TypeScript direkt an den Browser sendet, wird Babel Standalone (`index.html`) verwendet, um den Code "on-the-fly" in gültiges JavaScript umzuwandeln.
+    *   **Babel Presets:** Der entscheidende Schritt ist, dem Babel-Skript über das Attribut `data-presets="react,typescript"` mitzuteilen, dass es sowohl JSX- als auch TypeScript-Syntax kompilieren soll.
+    *   **Explizite Importe:** Es ist unerlässlich, in **allen `.tsx` und `.ts` Dateien** die lokalen Importe mit der korrekten Dateiendung zu versehen (z.B. `import App from './App.tsx'`). Dies ist notwendig, damit der Browser die exakte Datei anfordert und der Server sie mit dem korrekten MIME-Typ ausliefern kann.
     *   **UI-Einstellungen:** Dank der `vercel.json`-Datei müssen Sie in der Vercel-Benutzeroberfläche **keine Build-Einstellungen überschreiben**. Belassen Sie alle Felder bei ihren Standardwerten.
 3.  **Deploy:** Klicken Sie auf "Deploy".
 
@@ -122,6 +123,9 @@ Dieses Projekt ist für ein einfaches Deployment auf [Vercel](https://vercel.com
 
 ### 7. Entwicklungsverlauf (Changelog)
 
+*   **v3.0.6 (Deployment Fix):**
+    *   **Behoben:** Ein `SyntaxError` auf Vercel wurde behoben, der durch unkompilierte TypeScript-Syntax verursacht wurde.
+    *   **Hinzugefügt:** Das Babel-Skript in `index.html` wurde mit `data-presets="react,typescript"` konfiguriert, um sowohl JSX als auch TypeScript im Browser zu kompilieren. Dies ist der finale Schritt für ein erfolgreiches Deployment.
 *   **v3.0.5 (Deployment Fix):**
     *   **Behoben:** Ein finaler MIME-Typ-Fehler (`text/plain`) wurde behoben, der das Laden von Modulen auf Vercel verhinderte.
     *   **Überarbeitet:** Alle lokalen `import`-Anweisungen im gesamten Projekt wurden um die explizite Dateiendung (`.tsx` oder `.ts`) erweitert. Dies ist für "build-less"-Projekte auf Produktionsservern unerlässlich.

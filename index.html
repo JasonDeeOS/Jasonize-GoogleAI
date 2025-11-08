@@ -98,7 +98,11 @@
 </head>
   <body>
     <div id="root"></div>
-    <!-- Changed type to "text/babel" to enable Babel compilation for JSX -->
-    <script type="text/babel" data-type="module" src="/index.tsx"></script>
+    <!-- 
+      - type="text/babel" enables Babel compilation.
+      - data-type="module" tells Babel to handle ES module syntax (import/export).
+      - data-presets="react,typescript" tells Babel to use the presets for compiling React (JSX) and TypeScript.
+    -->
+    <script type="text/babel" data-type="module" data-presets="react,typescript" src="/index.tsx"></script>
   </body>
 </html>
