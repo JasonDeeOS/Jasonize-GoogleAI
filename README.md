@@ -130,9 +130,9 @@ Dieses Projekt ist für ein nahtloses Deployment auf [Vercel](https://vercel.com
 
 ### 8. Entwicklungsverlauf (Changelog)
 
-*   **v4.1.1 (Deployment-Ready):**
-    *   **Korrigiert:** `index.html` wurde auf die saubere Vite-Vorlage umgestellt und der Vite-Einstiegspunkt (`src/index.tsx`) um den fehlenden CSS-Import erweitert.
-    *   **Entfernt:** Die fehlerhafte und unnötige `vercel.json`-Datei wurde entfernt, um den `Invalid JSON`-Fehler beim Deployment zu beheben.
+*   **v4.1.1 (Deployment-Ready Fix):**
+    *   **Korrigiert:** `index.html` wurde auf die saubere Vite-Vorlage umgestellt, um den Build-Fehler auf Vercel zu beheben.
+    *   **Entfernt:** Die fehlerhafte und unnötige `vercel.json`-Datei wurde aus dem Repository entfernt.
 *   **v4.0.2 (Prozess-Update):**
     *   **Geändert:** Der KI-Workflow wurde um einen expliziten Bestätigungsschritt ("go") erweitert, um Änderungen vor der Implementierung zu validieren.
 *   **v4.0.1 (Hybrider Workflow):**
