@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Note, NoteType, ListItem } from '../types';
-import CloseIcon from './icons/CloseIcon';
-import TrashIcon from './icons/TrashIcon';
-import SparklesIcon from './icons/SparklesIcon';
-import { SHOPPING_CATEGORIES, COMMON_GROCERY_ITEMS } from '../constants';
-import useShoppingHistory from '../hooks/useShoppingHistory';
+import { Note, NoteType, ListItem } from '../types.ts';
+import CloseIcon from './icons/CloseIcon.tsx';
+import TrashIcon from './icons/TrashIcon.tsx';
+import SparklesIcon from './icons/SparklesIcon.tsx';
+import { SHOPPING_CATEGORIES, COMMON_GROCERY_ITEMS } from '../constants.ts';
+import useShoppingHistory from '../hooks/useShoppingHistory.ts';
 
 interface NoteEditorModalProps {
   isOpen: boolean;

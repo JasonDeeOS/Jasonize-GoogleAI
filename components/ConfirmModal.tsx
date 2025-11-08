@@ -1,6 +1,6 @@
 import React from 'react';
-import CloseIcon from './icons/CloseIcon';
-import WarningIcon from './icons/WarningIcon';
+import CloseIcon from './icons/CloseIcon.tsx';
+import WarningIcon from './icons/WarningIcon.tsx';
 
 interface ConfirmModalProps {
   isOpen: boolean;

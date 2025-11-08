@@ -1,9 +1,9 @@
 import React from 'react';
-import { NoteType } from '../types';
-import CloseIcon from './icons/CloseIcon';
-import DocumentIcon from './icons/DocumentIcon';
-import ListIcon from './icons/ListIcon';
-import ShoppingCartIcon from './icons/ShoppingCartIcon';
+import { NoteType } from '../types.ts';
+import CloseIcon from './icons/CloseIcon.tsx';
+import DocumentIcon from './icons/DocumentIcon.tsx';
+import ListIcon from './icons/ListIcon.tsx';
+import ShoppingCartIcon from './icons/ShoppingCartIcon.tsx';
 
 interface NewNoteTypeModalProps {
   isOpen: boolean;

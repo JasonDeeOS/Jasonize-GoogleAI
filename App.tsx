@@ -1,21 +1,21 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Note, GithubGistSettings, NoteType } from './types';
-import useLocalStorage from './hooks/useLocalStorage';
-import { getGistContent, updateGistContent } from './services/githubService';
+import { Note, GithubGistSettings, NoteType } from './types.ts';
+import useLocalStorage from './hooks/useLocalStorage.ts';
+import { getGistContent, updateGistContent } from './services/githubService.ts';
 
-import NoteCard from './components/NoteCard';
-import SettingsModal from './components/SettingsModal';
-import NewNoteTypeModal from './components/NewNoteTypeModal';
-import NoteViewModal from './components/NoteViewModal';
-import NoteEditorModal from './components/NoteEditorModal';
-import Alert from './components/Alert';
-import ConfirmModal from './components/ConfirmModal';
-import Toast from './components/Toast';
-import CogIcon from './components/icons/CogIcon';
-import PlusIcon from './components/icons/PlusIcon';
-import SyncIcon from './components/icons/SyncIcon';
-import SunIcon from './components/icons/SunIcon';
-import MoonIcon from './components/icons/MoonIcon';
+import NoteCard from './components/NoteCard.tsx';
+import SettingsModal from './components/SettingsModal.tsx';
+import NewNoteTypeModal from './components/NewNoteTypeModal.tsx';
+import NoteViewModal from './components/NoteViewModal.tsx';
+import NoteEditorModal from './components/NoteEditorModal.tsx';
+import Alert from './components/Alert.tsx';
+import ConfirmModal from './components/ConfirmModal.tsx';
+import Toast from './components/Toast.tsx';
+import CogIcon from './components/icons/CogIcon.tsx';
+import PlusIcon from './components/icons/PlusIcon.tsx';
+import SyncIcon from './components/icons/SyncIcon.tsx';
+import SunIcon from './components/icons/SunIcon.tsx';
+import MoonIcon from './components/icons/MoonIcon.tsx';
 
 // --- Fallback-Konfiguration für Entwicklung ---
 // WIRD NUR VERWENDET, WENN KEINE BENUTZERKONFIGURATION IM LOCALSTORAGE VORHANDEN IST.

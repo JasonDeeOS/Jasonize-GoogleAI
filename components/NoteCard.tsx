@@ -1,8 +1,8 @@
 import React from 'react';
-import { Note, ListItem, NoteType } from '../types';
-import TrashIcon from './icons/TrashIcon';
-import RestoreIcon from './icons/RestoreIcon';
-import CloudOffIcon from './icons/CloudOffIcon';
+import { Note, ListItem, NoteType } from '../types.ts';
+import TrashIcon from './icons/TrashIcon.tsx';
+import RestoreIcon from './icons/RestoreIcon.tsx';
+import CloudOffIcon from './icons/CloudOffIcon.tsx';
 
 interface NoteCardProps {
   note: Note;

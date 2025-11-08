@@ -1,5 +1,4 @@
-
-import { Note, GithubGistSettings } from '../types';
+import { Note, GithubGistSettings } from '../types.ts';
 
 const GIST_FILENAME = 'cloud-notes.json';
 

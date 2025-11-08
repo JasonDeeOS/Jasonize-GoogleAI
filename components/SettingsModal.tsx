@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { GithubGistSettings } from '../types';
-import CloseIcon from './icons/CloseIcon';
+import { GithubGistSettings } from '../types.ts';
+import CloseIcon from './icons/CloseIcon.tsx';
 
 interface SettingsModalProps {
   isOpen: boolean;

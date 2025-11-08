@@ -1,9 +1,9 @@
 import React from 'react';
-import { Note, NoteType, ListItem } from '../types';
-import CloseIcon from './icons/CloseIcon';
-import EditIcon from './icons/EditIcon';
-import TrashIcon from './icons/TrashIcon';
-import CloudUploadIcon from './icons/CloudUploadIcon';
+import { Note, NoteType, ListItem } from '../types.ts';
+import CloseIcon from './icons/CloseIcon.tsx';
+import EditIcon from './icons/EditIcon.tsx';
+import TrashIcon from './icons/TrashIcon.tsx';
+import CloudUploadIcon from './icons/CloudUploadIcon.tsx';
 
 interface NoteViewModalProps {
   isOpen: boolean;
