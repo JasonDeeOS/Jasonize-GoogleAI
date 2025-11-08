@@ -10,19 +10,20 @@ Eine vielseitige, moderne Notizanwendung, die Benutzern maximale Flexibilität b
 2.  [Features](#2-features)
 3.  [Benutzerhandbuch: Cloud-Synchronisierung einrichten](#3-benutzerhandbuch-cloud-synchronisierung-einrichten)
 4.  [Lokales Entwickler-Setup](#4-lokales-entwickler-setup)
-5.  [Deployment (Vercel)](#5-deployment-vercel)
-6.  [Technischer Stack](#6-technischer-stack)
-7.  [Entwicklungsverlauf (Changelog)](#7-entwicklungsverlauf-changelog)
-8.  [Versions-Snapshot (Prompt-Grundlage)](#8-versions-snapshot-prompt-grundlage)
+5.  [Entwicklung mit AI Studio Sandbox](#5-entwicklung-mit-ai-studio-sandbox)
+6.  [Deployment (Vercel)](#6-deployment-vercel)
+7.  [Technischer Stack](#7-technischer-stack)
+8.  [Entwicklungsverlauf (Changelog)](#8-entwicklungsverlauf-changelog)
 
 ---
 
 ### 1. High-Level-Konzept
 
-Die "Cloud & Lokale Notizen App" ist als reaktionsschnelle Single-Page-Application (SPA) konzipiert, die ein klares, intuitives Benutzererlebnis in einem ansprechenden Dark Mode bietet. Sie ermöglicht es Benutzern, Notizen entweder nur lokal im Browser oder synchronisiert über mehrere Geräte in der Cloud zu speichern.
+Die "Cloud & Lokale Notizen App" ist als reaktionsschnelle Single-Page-Application (SPA) konzipiert, die ein klares, intuitives Benutzererlebnis bietet. Sie ermöglicht es Benutzern, Notizen entweder nur lokal im Browser oder synchronisiert über mehrere Geräte in der Cloud zu speichern.
 
 ### 2. Features
 
+*   **Professioneller Build-Prozess:** Nutzt Vite für schnelle Entwicklung, Optimierung und robustes Deployment.
 *   **Mobile-First-Optimierung:** Die gesamte Benutzeroberfläche ist für eine intuitive Bedienung auf Smartphones optimiert.
     *   **Floating Action Button (FAB):** Die wichtigste Aktion – das Erstellen einer neuen Notiz – ist über einen schwebenden Button in der unteren rechten Ecke jederzeit leicht erreichbar.
     *   **Bottom Sheet Modals:** Alle Dialoge gleiten auf mobilen Geräten vom unteren Bildschirmrand nach oben, was die Bedienung mit einer Hand erleichtert und sich nativer anfühlt.
@@ -35,17 +36,10 @@ Die "Cloud & Lokale Notizen App" ist als reaktionsschnelle Single-Page-Applicati
 *   **Notizen verschieben (Lokal -> Cloud):** Übertragen Sie Notizen mit einem Klick vom lokalen Speicher in die Cloud.
 *   **Automatische Hintergrund-Synchronisierung:** Cloud-Notizen werden automatisch alle 60 Sekunden im Hintergrund aktualisiert, um Änderungen von anderen Geräten zu übernehmen.
 *   **Theme-Umschalter (Light/Dark):** Wechseln Sie mit einem Klick im Header zwischen einem hellen und einem dunklen Design.
-*   **Optimierter Dark Mode:** Verbessertes Farbschema im dunklen Modus für höheren Kontrast und bessere Lesbarkeit.
 *   **Hybrider Speicher:** Wählen Sie pro Notiz, ob sie lokal (`localStorage`) oder in der Cloud (GitHub Gist) gespeichert werden soll.
 *   **Papierkorb:** Gelöschte Notizen werden in einen Papierkorb verschoben und können von dort wiederhergestellt oder endgültig gelöscht werden, um Datenverlust zu vermeiden.
-*   **Verschiedene Notiztypen:**
-    *   **Textnotiz:** Für einfache Memos und Gedanken.
-    *   **Checkliste:** Für To-do-Listen mit abhakbaren Einträgen.
-    *   **Einkaufsliste:** Eine erweiterte Checkliste mit Feldern für Menge, Kategorie und Notizen sowie automatischer Gruppierung nach Kategorien.
+*   **Verschiedene Notiztypen:** Textnotiz, Checkliste, Einkaufsliste.
 *   **Subtile UI-Animationen:** Sanfte Animationen beim Erstellen, Aktualisieren und Löschen von Notizen sorgen für ein flüssigeres Benutzererlebnis.
-*   **Permanente Statusanzeige:** Der Cloud-Sync-Status ist nun jederzeit prominent im Header sichtbar.
-*   **Inhalts-Vorschau:** Sehen Sie direkt auf der Notizkarte einen Auszug des Inhalts, um Notizen schneller zu identifizieren.
-*   **Erfolgsbenachrichtigungen:** Erhalten Sie eine kurzzeitige "Toast"-Nachricht als Bestätigung, wenn eine Notiz erfolgreich gespeichert wurde.
 
 ### 3. Benutzerhandbuch: Cloud-Synchronisierung einrichten
 
@@ -81,163 +75,80 @@ Die App wird nun versuchen, sich mit Ihrem Gist zu verbinden. Wenn alles geklapp
 
 ### 4. Lokales Entwickler-Setup
 
-Das Projekt ist als "build-less" Setup konzipiert und benötigt nur einen einfachen statischen Webserver.
+Das Projekt verwendet Vite als Build-Tool und erfordert Node.js und npm.
 
 1.  **Repository klonen:**
     ```bash
     git clone <repository-url>
     cd <repository-directory>
     ```
-2.  **Webserver starten:**
-    Verwenden Sie ein beliebiges Tool, um einen lokalen Webserver im Projektverzeichnis zu starten. Ein einfacher Weg ist die Verwendung von `serve`:
+2.  **Abhängigkeiten installieren:**
     ```bash
-    # Falls noch nicht installiert: npm install -g serve
-    serve .
+    npm install
     ```
-3.  Öffnen Sie die angezeigte URL (z.B. `http://localhost:3000`) in Ihrem Browser.
+3.  **Entwicklungsserver starten:**
+    ```bash
+    npm run dev
+    ```
+4.  Öffnen Sie die angezeigte URL (z.B. `http://localhost:5173`) in Ihrem Browser.
 
-Für Entwicklungszwecke können Sie eine Fallback-Konfiguration direkt in `App.tsx` eintragen, um die Cloud-Funktionalität ohne UI-Eingabe zu testen.
+Für Entwicklungszwecke können Sie eine Fallback-Konfiguration direkt in `src/App.tsx` eintragen, um die Cloud-Funktionalität ohne UI-Eingabe zu testen.
 
-### 5. Deployment (Vercel)
+### 5. Entwicklung mit AI Studio Sandbox
 
-Dieses Projekt ist für ein einfaches Deployment auf [Vercel](https://vercel.com) optimiert. Der Schlüssel zum Erfolg liegt in der korrekten Konfiguration für ein "build-less" Projekt.
+Um eine Live-Vorschau während der Entwicklung mit AI Studio zu ermöglichen, wurde ein hybrider Workflow implementiert.
 
-1.  **Projekt importieren:** Importieren Sie Ihr Git-Repository in Vercel.
-2.  **Konfiguration:**
-    *   **`vercel.json`:** Die `vercel.json`-Datei im Repository ist entscheidend. Sie teilt Vercel explizit mit, wie das Projekt behandelt werden soll (kein Framework, statisches Output-Verzeichnis, korrekte Header für `.tsx`-Dateien).
-    *   **Babel Standalone:** Da dieses Projekt "build-less" ist und JSX/TypeScript direkt an den Browser sendet, wird Babel Standalone (`index.html`) verwendet, um den Code "on-the-fly" in gültiges JavaScript umzuwandeln.
-    *   **Babel Presets:** Der entscheidende Schritt ist, dem Babel-Skript über das Attribut `data-presets="typescript,react"` mitzuteilen, dass es sowohl TypeScript- als auch JSX-Syntax kompilieren soll. Die Reihenfolge ist hierbei wichtig, um TypeScript-Syntax korrekt zu entfernen.
-    *   **Explizite Importe:** Es ist unerlässlich, in **allen `.tsx` und `.ts` Dateien** die lokalen Importe mit der korrekten Dateiendung zu versehen (z.B. `import App from './App.tsx'`). Dies ist notwendig, damit der Browser die exakte Datei anfordert und der Server sie mit dem korrekten MIME-Typ ausliefern kann.
-    *   **UI-Einstellungen:** Dank der `vercel.json`-Datei müssen Sie in der Vercel-Benutzeroberfläche **keine Build-Einstellungen überschreiben**. Belassen Sie alle Felder bei ihren Standardwerten.
-3.  **Deploy:** Klicken Sie auf "Deploy".
+*   **`index.html`:** Diese Datei ist die saubere Vorlage für das **Vercel-Deployment** und den lokalen Vite-Entwicklungsserver.
+*   **`index.sandbox.html`:** Diese Datei ist der Einstiegspunkt für die **AI Studio Sandbox**. Sie verwendet CDN-Skripte, um den Code direkt im Browser auszuführen.
 
-### 6. Technischer Stack
+**Workflow:**
+1.  **An die KI geben:** Um Änderungen in der Sandbox zu testen, geben Sie der KI den Inhalt von `index.sandbox.html` als `index.html`.
+2.  **Von der KI erhalten:** Sie erhalten aktualisierte Quelldateien, eine aktualisierte `index.sandbox.html` und die saubere `index.html` zurück.
+3.  **Wichtige Anforderung:** Damit die Sandbox funktioniert, müssen alle lokalen `import`-Anweisungen in den `.tsx` und `.ts` Dateien **explizite Dateiendungen** enthalten (z.B. `import App from './App.tsx'`). Vite kann dies verarbeiten, für die Sandbox ist es jedoch unerlässlich.
+4.  **Wichtiger Hinweis:** Für eine korrekte Git-Versionskontrolle ist eine `.gitignore`-Datei unerlässlich. Da die KI diese nicht erstellen kann, müssen Sie sie manuell über die GitHub-Weboberfläche hinzufügen.
 
+### 6. Deployment (Vercel)
+
+Dieses Projekt ist für ein nahtloses Deployment auf [Vercel](https://vercel.com) vorbereitet.
+
+1.  **Repository pushen:** Stellen Sie sicher, dass Ihr Code in einem GitHub/GitLab/Bitbucket-Repository ist.
+2.  **Projekt in Vercel importieren:**
+    *   Importieren Sie Ihr Git-Repository in Vercel.
+    *   Wählen Sie als **"Framework Preset"** die Option **"Vite"**.
+    *   Vercel erkennt das Projekt automatisch und füllt alle Build-Einstellungen korrekt aus. Es sind keine weiteren manuellen Anpassungen notwendig.
+3.  **Deploy:** Klicken Sie auf "Deploy". Vercel führt `npm run build` aus, findet den Output im `dist`-Ordner und stellt die optimierte Anwendung bereit.
+
+### 7. Technischer Stack
+
+*   **Build-Tool:** Vite
 *   **Framework:** React 18
 *   **Sprache:** TypeScript
-*   **Styling:** Tailwind CSS (via CDN)
-*   **In-Browser-Kompilierung:** Babel Standalone
+*   **Styling:** Tailwind CSS (via PostCSS)
 *   **Icons:** Inline SVG als React-Komponenten
 *   **Lokaler Speicher:** `window.localStorage`
 *   **Cloud-API:** GitHub Gist REST API
 
-### 7. Entwicklungsverlauf (Changelog)
+### 8. Entwicklungsverlauf (Changelog)
 
-*   **v3.0.7 (Deployment Fix):**
-    *   **Behoben:** Ein `SyntaxError` auf Vercel wurde endgültig behoben.
-    *   **Korrigiert:** Die Reihenfolge der Babel-Presets in `index.html` wurde zu `"typescript,react"` korrigiert. Dies stellt sicher, dass TypeScript-spezifische Syntax (wie Typdefinitionen) korrekt entfernt wird, bevor der JSX-Code verarbeitet wird.
-*   **v3.0.6 (Deployment Fix):**
-    *   **Behoben:** Ein `SyntaxError` auf Vercel wurde behoben, der durch unkompilierte TypeScript-Syntax verursacht wurde.
-    *   **Hinzugefügt:** Das Babel-Skript in `index.html` wurde mit `data-presets="react,typescript"` konfiguriert, um sowohl JSX als auch TypeScript im Browser zu kompilieren. Dies ist der finale Schritt für ein erfolgreiches Deployment.
-*   **v3.0.5 (Deployment Fix):**
-    *   **Behoben:** Ein finaler MIME-Typ-Fehler (`text/plain`) wurde behoben, der das Laden von Modulen auf Vercel verhinderte.
-    *   **Überarbeitet:** Alle lokalen `import`-Anweisungen im gesamten Projekt wurden um die explizite Dateiendung (`.tsx` oder `.ts`) erweitert. Dies ist für "build-less"-Projekte auf Produktionsservern unerlässlich.
-*   **v3.0.4 (Deployment Fix):**
-    *   **Behoben:** Ein `SyntaxError` auf der Vercel-Deployment-Seite ("weißer Bildschirm") wurde behoben.
-    *   **Hinzugefügt:** Babel Standalone wurde in die `index.html` integriert, um JSX-Code (`.tsx`) direkt im Browser in gültiges JavaScript zu kompilieren. Dies ist notwendig, da Browser JSX nicht nativ verstehen.
-*   **v3.0.3 (Deployment Fix):**
-    *   **Behoben:** Die `vercel.json`-Datei wurde um eine `headers`-Regel erweitert, um `.tsx`-Dateien mit dem korrekten `Content-Type: text/javascript` auszuliefern. Dies behebt den "weißen Bildschirm"-Fehler nach dem Deployment auf Vercel.
-*   **v3.0.2 (Deployment Fix):**
-    *   **Behoben:** Die `vercel.json`-Datei wurde erweitert, um das `outputDirectory` explizit auf das Stammverzeichnis zu setzen. Dies behebt den Vercel-Build-Fehler endgültig.
-*   **v3.0.1 (Deployment Fix):**
-    *   **Hinzugefügt:** Eine `vercel.json`-Konfigurationsdatei wurde hinzugefügt, um die automatische Framework-Erkennung von Vercel zu deaktivieren. Dies behebt einen Build-Fehler und ermöglicht ein erfolgreiches Deployment als statische Seite.
-*   **v3.0.0 (Major UI/UX Overhaul):**
-    *   **Hinzugefügt:** Die gesamte Anwendung wurde für eine "Mobile-First"-Benutzererfahrung optimiert.
-    *   **Hinzugefügt:** Ein Floating Action Button (FAB) ersetzt den "Neue Notiz"-Button im Header für eine bessere mobile Erreichbarkeit.
-    *   **Überarbeitet:** Alle Modals wurden in "Bottom Sheets" umgewandelt, die auf mobilen Geräten von unten ins Bild gleiten und sich nativer anfühlen.
-    *   **Verbessert:** Die Bedienbarkeit auf Touch-Geräten wurde durch permanent sichtbare Aktions-Buttons und größere, gestapelte Schaltflächen in Dialogen verbessert.
-*   **v2.4.1 (UX Improvement):**
-    *   **Verbessert:** Die Autovervollständigung für Einkaufslisten wurde verbessert. Sie priorisiert nun Treffer am Wortanfang und aus der Einkaufshistorie und hebt die Suchübereinstimmung visuell hervor.
-*   **v2.4.0 (UX Improvement):**
-    *   **Verbessert:** Die Benutzeroberfläche für Einkaufslisten wurde grundlegend überarbeitet. Der Editor gruppiert Artikel nun ebenfalls nach Kategorien und ermöglicht die direkte Bearbeitung von Mengen und Notizen in einer kompakten Inline-Ansicht. Die Darstellung im Ansichtsmodus wurde für bessere Lesbarkeit optimiert.
-*   **v2.3.0 (Feature Release):**
-    *   **Hinzugefügt:** Cloud-Notizen sind jetzt offline-fähig. Sie können auch ohne Internetverbindung erstellt und bearbeitet werden. Änderungen werden lokal zwischengespeichert und automatisch synchronisiert, sobald wieder eine Verbindung besteht. Eine neue, robustere Synchronisierungs- und Merge-Logik wurde implementiert.
-*   **v2.2.0 (Feature Release):**
-    *   **Hinzugefügt:** Der Editor für Einkaufslisten wurde grundlegend überarbeitet. Er enthält nun eine "Smart Quick-Add"-Leiste mit Autovervollständigung, automatischer Kategorisierung und einem Bereich für "Häufig gekaufte" Artikel, um die Erstellung von Listen erheblich zu beschleunigen.
-*   **v2.1.0 (Feature Release):**
-    *   **Hinzugefügt:** Eine Funktion zum Verschieben von lokalen Notizen in die Cloud wurde implementiert. Diese Aktion ist über die Notiz-Detailansicht verfügbar.
-*   **v2.0.4 (UI/UX Improvement):**
-    *   **Verbessert:** Der 'Cloud erstellen'-Button im "Neue Notiz"-Dialog wurde visuell hervorgehoben (solide Hintergrundfarbe), um seine Bedeutung als primäre Aktion zu verdeutlichen und die Konsistenz mit anderen Buttons zu verbessern.
-*   **v2.0.3 (UI/UX Improvement):**
-    *   **Verbessert:** Die UI-Farbpalette wurde überarbeitet. Die primäre Akzentfarbe ist nun Orange und die sekundäre Farbe ist Cyan, was der App ein frischeres, moderneres Aussehen verleiht.
-*   **v2.0.2 (UI/UX Improvement):**
-    *   **Verbessert:** Der Kontrast und die Lesbarkeit im Dark Mode wurden optimiert. Insbesondere die Textfarbe auf primären Buttons wurde angepasst, um die Barrierefreiheit zu erhöhen.
-*   **v2.0.1 (Bugfix Release):**
-    *   **Behoben:** Ein Laufzeitfehler (`TypeError`) wurde behoben, der beim Erstellen von neuen Listen- oder Einkaufslisten-Notizen auftrat. Die Zustandsverwaltung im Notiz-Editor wurde robuster gestaltet, um diesen Fehler zu verhindern.
-*   **v2.0.0 (Major Feature Release):**
-    *   **Hinzugefügt:** Eine automatische Hintergrund-Synchronisierung wurde implementiert. Die App ruft nun alle 60 Sekunden den neuesten Stand der Cloud-Notizen aus dem Gist ab, um Änderungen von anderen Geräten nahtlos zu übernehmen. Ein Sperrmechanismus verhindert dabei Datenkonflikte.
-*   **v1.9.0 (Feature Release):**
-    *   **Hinzugefügt:** Ein Theme-Umschalter (Light/Dark Mode) wurde im Header implementiert. Die Benutzereinstellung wird im `localStorage` gespeichert.
-*   **v1.8.0 (Feature Release):**
-    *   **Hinzugefügt:** Eine Papierkorb-Funktion wurde implementiert. Notizen werden nicht mehr sofort gelöscht, sondern in einen "Papierkorb"-Bereich verschoben, aus dem sie wiederhergestellt oder endgültig gelöscht werden können. Dies gilt sowohl für lokale als auch für Cloud-Notizen.
-*   **v1.7.0 (UX Redesign & Bugfix):**
-    *   **Überarbeitet:** Der Dialog zur Auswahl eines neuen Notiztyps wurde komplett neugestaltet. Statt Radio-Buttons gibt es nun interaktive Karten mit Icons und direkten "Erstellen"-Aktionen, was den Workflow von drei auf zwei Klicks reduziert.
-    *   **Behoben:** Ein kritischer Bug wurde behoben, der das Erstellen neuer Notizen verhinderte. Die zugrundeliegende Zustandsverwaltung wurde bereinigt und robuster gestaltet.
-*   **v1.6.1 (Bugfix Release):**
-    *   **Behoben:** Ein kritischer Bug, der das zuverlässige Löschen von Cloud-Notizen verhinderte, wurde durch die Implementierung eines "optimistischen" Updates behoben. Die neue Logik verhindert Probleme mit veraltetem Zustand ("stale state") und stellt im Fehlerfall die Notiz sicher wieder her.
-*   **v1.6.0 (UX Improvement):**
-    *   **Hinzugefügt:** Subtile Animationen beim Erstellen, Aktualisieren und Löschen von Notizen für ein flüssigeres UI-Feedback.
-*   **v1.5.0 (UI Improvement):**
-    *   **Verbessert:** Der Synchronisierungsstatus der Cloud-Notizen wird nun direkt im Header neben dem App-Namen angezeigt, um eine bessere Sichtbarkeit zu gewährleisten.
-*   **v1.4.0 (UX Improvement):**
-    *   **Hinzugefügt:** Eine kurzzeitige "Toast"-Benachrichtigung wird nach dem erfolgreichen Speichern einer Notiz angezeigt, um dem Benutzer direktes Feedback zu geben.
-*   **v1.3.0 (Security Feature):**
-    *   **Hinzugefügt:** Ein Bestätigungsdialog wird vor einer manuellen Synchronisierung angezeigt, um den Benutzer vor dem versehentlichen Überschreiben von Daten zu warnen.
-*   **v1.2.1 (UI Improvement):**
-    *   **Verbessert:** Die Fehleranzeige für die Cloud-Synchronisierung wurde durch eine ausblendbare `Alert`-Komponente ersetzt. Dies verhindert, dass der Notizenbereich bei einem Sync-Fehler blockiert wird.
-*   **v1.2.0 (Feature Release):**
-    *   Inhalts-Vorschau auf Notizkarten hinzugefügt, die je nach Notiztyp entweder die ersten Textzeilen oder die Anzahl der Listeneinträge anzeigt.
-*   **v1.1.1 (Process Update):**
-    *   `instructions.md` erstellt, um Kernanweisungen und dauerhafte Aufgaben für die KI-Entwicklung zu dokumentieren.
-*   **v1.1.0 (Feature Release):**
-    *   Manueller Synchronisierungs-Button für Cloud-Notizen hinzugefügt, um die Synchronisierung bei Bedarf auszulösen.
-*   **v1.0.1 (Bugfix Release):**
-    *   **Behoben:** Eine Race Condition, die das Löschen von Cloud-Notizen unzuverlässig machte. Ein unnötiger Re-Sync wurde durch die Optimierung des Renderings mit `useMemo` verhindert.
-*   **v1.0.0 (Initial Release):**
-    *   Grundstruktur der App mit Header und zwei Notiz-Grids (Lokal & Cloud) erstellt.
-    *   Implementierung des kompletten Notiz-Lebenszyklus: Erstellen, Anzeigen, Bearbeiten, Löschen.
-    *   Einführung von drei Notiztypen: Text, Liste, Einkaufsliste.
-    *   Vollständige Integration mit `localStorage` für lokale Notizen und der GitHub Gist API für Cloud-Notizen.
-    *   Erstellung aller notwendigen Modals (`Settings`, `NewNoteType`, `NoteView`, `NoteEditor`).
-    *   Styling im Dark Mode mit Tailwind CSS.
-    *   Hinzufügen einer simplen Datenmigrationslogik für Notizen älteren Formats.
-
-### 8. Versions-Snapshot (Prompt-Grundlage)
-
-Dieser Abschnitt enthält einen vollständigen Code-Snapshot der Hauptkomponente `App.tsx` zum Zeitpunkt des Releases v3.0.0. Er dient als präzise, versionierte Blaupause und kann als verlässliche Grundlage für eine Weiterentwicklung (z.B. durch eine KI) dienen.
-
-```typescript
-// --- App.tsx Snapshot v3.0.0 ---
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-// ... imports
-
-const App: React.FC = () => {
-  // ... state initializations
-  
-  // ... handlers
-
-  return (
-    <div className="min-h-screen font-sans pb-24">
-      <header className="sticky top-0 bg-surface/80 backdrop-blur-sm shadow-md z-10">
-        {/* ... header JSX ... */}
-      </header>
-      
-      <main className="container mx-auto p-4 md:p-6">
-        {/* ... main content JSX ... */}
-      </main>
-
-      <button
-        onClick={() => setNewNoteModalOpen(true)}
-        className="fixed bottom-6 right-6 z-20 p-4 rounded-full bg-primary text-on-primary shadow-lg hover:bg-primary-variant transition-transform transform hover:scale-110"
-        aria-label="Neue Notiz erstellen"
-      >
-        <PlusIcon className="h-8 w-8" />
-      </button>
-
-      {/* ... All Modal Components ... */}
-    </div>
-  );
-};
-
-export default App;
-```
+*   **v4.1.0 (Deployment-Ready):**
+    *   **Korrigiert:** `index.html` wurde auf die saubere Vite-Vorlage umgestellt.
+    *   **Korrigiert:** UI-Bug mit schlechtem Farbkontrast bei sekundären Buttons im Dark Mode behoben.
+    *   **Bereinigt:** Redundante `importmap` aus `index.sandbox.html` entfernt.
+    *   **Bereinigt:** Unnötige `vercel.json`-Datei entfernt.
+*   **v4.0.2 (Prozess-Update):**
+    *   **Geändert:** Der KI-Workflow wurde um einen expliziten Bestätigungsschritt ("go") erweitert, um Änderungen vor der Implementierung zu validieren.
+*   **v4.0.1 (Hybrider Workflow):**
+    *   **Korrigiert:** `index.html` wurde durch eine saubere Vite-Vorlage ersetzt, um das Deployment zu ermöglichen.
+    *   **Hinzugefügt:** `index.sandbox.html` für eine funktionierende Vorschau in der AI Studio Sandbox.
+    *   **Angepasst:** Alle lokalen Import-Anweisungen enthalten nun explizite Dateiendungen (`.tsx`, `.ts`), um die Kompatibilität mit der Sandbox zu gewährleisten.
+*   **v4.0.0 (Major Refactoring):**
+    *   **Umstellung auf Vite:** Das gesamte Projekt wurde von einem "build-less" Setup auf einen professionellen, Vite-basierten Build-Prozess umgestellt.
+    *   **Projektstruktur:** Alle Quellcode-Dateien wurden in ein `src`-Verzeichnis verschoben.
+    *   **Konfiguration:** Alle notwendigen Konfigurationsdateien (`package.json`, `vite.config.ts`, `tsconfig.json`, `tailwind.config.js`) wurden hinzugefügt.
+*   **v3.x.x (Deployment Fixes & Mobile-First UI):**
+    *   Diverse Korrekturen für das Vercel-Deployment eines "build-less" Setups.
+    *   Umfassende Optimierung der Benutzeroberfläche für mobile Geräte (FAB, Bottom Sheets).
+*   **v2.x.x (Feature Releases):**
+    *   Hinzugefügt: Offline-Fähigkeit, Intelligenter Einkaufslisten-Editor, Notizen verschieben, Automatische Hintergrund-Synchronisierung, Theme-Umschalter, Papierkorb, etc.
+*   **v1.x.x (Initial Releases & Bugfixes):**
+    *   Grundfunktionalität, verschiedene Notiztypen, Cloud-Integration und UI-Verbesserungen.

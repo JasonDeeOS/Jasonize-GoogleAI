@@ -4,106 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cloud & Lokale Notizen</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      :root {
-        --color-background: #f9fafb;
-        --color-surface: #ffffff;
-        --color-primary: #f97316; /* Orange 500 */
-        --color-primary-variant: #ea580c; /* Orange 600 */
-        --color-secondary: #06b6d4; /* Cyan 500 */
-        --color-secondary-variant: #0891b2; /* Cyan 600 */
-        --color-on-background: #1f2937;
-        --color-on-surface: #111827;
-        --color-on-primary: #ffffff;
-        --color-on-secondary: #ffffff;
-        --color-danger: #ef4444;
-      }
-      .dark {
-        --color-background: #121212;
-        --color-surface: #1e1e1e;
-        --color-primary: #fb923c; /* Orange 400 */
-        --color-primary-variant: #f97316; /* Orange 500 */
-        --color-secondary: #22d3ee; /* Cyan 400 */
-        --color-secondary-variant: #06b6d4; /* Cyan 500 */
-        --color-on-background: #e0e0e0;
-        --color-on-surface: #ffffff;
-        --color-on-primary: #ffffff;
-        --color-on-secondary: #000000;
-        --color-danger: #cf6679;
-      }
-      body {
-        background-color: var(--color-background);
-        color: var(--color-on-background);
-      }
-    </style>
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            colors: {
-              background: 'var(--color-background)',
-              surface: 'var(--color-surface)',
-              primary: 'var(--color-primary)',
-              'primary-variant': 'var(--color-primary-variant)',
-              secondary: 'var(--color-secondary)',
-              'secondary-variant': 'var(--color-secondary-variant)',
-              'on-background': 'var(--color-on-background)',
-              'on-surface': 'var(--color-on-surface)',
-              'on-primary': 'var(--color-on-primary)',
-              'on-secondary': 'var(--color-on-secondary)',
-              danger: 'var(--color-danger)',
-            },
-            keyframes: {
-              'fade-in-right': {
-                '0%': { opacity: '0', transform: 'translateX(100%)' },
-                '100%': { opacity: '1', transform: 'translateX(0)' },
-              },
-              'scale-in': {
-                '0%': { opacity: '0', transform: 'scale(0.95)' },
-                '100%': { opacity: '1', transform: 'scale(1)' },
-              },
-              'highlight-pulse': {
-                '0%': { boxShadow: '0 0 0 0 rgba(251, 146, 60, 0.4)' },
-                '70%': { boxShadow: '0 0 0 6px rgba(251, 146, 60, 0)' },
-                '100%': { boxShadow: '0 0 0 0 rgba(251, 146, 60, 0)' },
-              },
-              'slide-in-up': {
-                '0%': { transform: 'translateY(100%)' },
-                '100%': { transform: 'translateY(0)' },
-              },
-            },
-            animation: {
-              'fade-in-right': 'fade-in-right 0.5s ease-out forwards',
-              'scale-in': 'scale-in 0.3s ease-out forwards',
-              'highlight-pulse': 'highlight-pulse 1s ease-out',
-              'slide-in-up': 'slide-in-up 0.3s ease-out forwards',
-            },
-          },
-        },
-      }
-    </script>
   <script type="importmap">
 {
   "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "vite": "https://aistudiocdn.com/vite@^7.2.2",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.0"
   }
 }
 </script>
-<!-- Add Babel Standalone for JSX compilation in the browser -->
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
   <body>
     <div id="root"></div>
-    <!-- 
-      - type="text/babel" enables Babel compilation.
-      - data-type="module" tells Babel to handle ES module syntax (import/export).
-      - data-presets="typescript,react" tells Babel to use the presets for compiling TypeScript and then React (JSX).
-        The order is important: TypeScript must be processed first.
-    -->
-    <script type="text/babel" data-type="module" data-presets="typescript,react" src="/index.tsx"></script>
+    <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>
