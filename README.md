@@ -104,9 +104,8 @@ Dieses Projekt ist für ein einfaches Deployment auf [Vercel](https://vercel.com
 
 1.  **Projekt importieren:** Importieren Sie Ihr Git-Repository in Vercel.
 2.  **Konfiguration:**
-    *   **Framework Preset:** Vercel sollte automatisch `Other` erkennen. Falls nicht, wählen Sie es manuell aus.
-    *   **Build & Output Settings:** Dank der `vercel.json`-Datei im Repository müssen Sie **keine Build-Einstellungen überschreiben**. Vercel wird den Build-Schritt korrekt überspringen.
-    *   **Root Directory:** Belassen Sie diese Einstellung auf dem Standardwert (dem Stammverzeichnis Ihres Repositories).
+    *   **`vercel.json`:** Die `vercel.json`-Datei im Repository teilt Vercel explizit mit, dass es kein Framework erkennen und das Stammverzeichnis (`.`) als Ausgabeordner verwenden soll.
+    *   **UI-Einstellungen:** Dank der `vercel.json`-Datei müssen Sie in der Vercel-Benutzeroberfläche **keine Build-Einstellungen überschreiben**. Belassen Sie alle Felder bei ihren Standardwerten.
 3.  **Deploy:** Klicken Sie auf "Deploy".
 
 ### 6. Technischer Stack
@@ -120,6 +119,8 @@ Dieses Projekt ist für ein einfaches Deployment auf [Vercel](https://vercel.com
 
 ### 7. Entwicklungsverlauf (Changelog)
 
+*   **v3.0.2 (Deployment Fix):**
+    *   **Behoben:** Die `vercel.json`-Datei wurde erweitert, um das `outputDirectory` explizit auf das Stammverzeichnis zu setzen. Dies behebt den Vercel-Build-Fehler endgültig.
 *   **v3.0.1 (Deployment Fix):**
     *   **Hinzugefügt:** Eine `vercel.json`-Konfigurationsdatei wurde hinzugefügt, um die automatische Framework-Erkennung von Vercel zu deaktivieren. Dies behebt einen Build-Fehler und ermöglicht ein erfolgreiches Deployment als statische Seite.
 *   **v3.0.0 (Major UI/UX Overhaul):**
