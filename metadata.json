@@ -1,0 +1,5 @@
+{
+  "name": "Cloud & Lokale Notizen App",
+  "description": "Eine vielseitige, moderne Notizanwendung, die Benutzern maximale Flexibilität bei der Speicherung und Organisation ihrer Gedanken bietet, indem sie den lokalen Speicher des Browsers und einen optionalen Cloud-Speicher über die GitHub Gist API kombiniert.",
+  "requestFramePermissions": []
+}

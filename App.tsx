@@ -1,143 +1,3 @@
-# Cloud & Lokale Notizen App
-
-Eine vielseitige, moderne Notizanwendung, die Benutzern maximale Flexibilität bei der Speicherung und Organisation ihrer Gedanken bietet. Das Kernkonzept ist ein hybrider Ansatz, der zwei Speicherorte kombiniert: den schnellen, offline verfügbaren **lokalen Speicher** des Browsers und einen optionalen **Cloud-Speicher** über die GitHub Gist API für geräteübergreifende Synchronisierung.
-
-![App Screenshot](https://picsum.photos/1200/600)
-
-## Inhaltsverzeichnis
-
-1.  [High-Level-Konzept](#1-high-level-konzept)
-2.  [Features](#2-features)
-3.  [Benutzerhandbuch: Cloud-Synchronisierung einrichten](#3-benutzerhandbuch-cloud-synchronisierung-einrichten)
-4.  [Entwickler-Setup](#4-entwickler-setup)
-5.  [Technischer Stack](#5-technischer-stack)
-6.  [Entwicklungsverlauf (Changelog)](#6-entwicklungsverlauf-changelog)
-7.  [Versions-Snapshot (Prompt-Grundlage)](#7-versions-snapshot-prompt-grundlage)
-
----
-
-### 1. High-Level-Konzept
-
-Die "Cloud & Lokale Notizen App" ist als reaktionsschnelle Single-Page-Application (SPA) konzipiert, die ein klares, intuitives Benutzererlebnis in einem ansprechenden Dark Mode bietet. Sie ermöglicht es Benutzern, Notizen entweder nur lokal im Browser oder synchronisiert über mehrere Geräte in der Cloud zu speichern.
-
-### 2. Features
-
-*   **Hybrider Speicher:** Wählen Sie pro Notiz, ob sie lokal (`localStorage`) oder in der Cloud (GitHub Gist) gespeichert werden soll.
-*   **Verschiedene Notiztypen:**
-    *   **Textnotiz:** Für einfache Memos und Gedanken.
-    *   **Checkliste:** Für To-do-Listen mit abhakbaren Einträgen.
-    *   **Einkaufsliste:** Eine erweiterte Checkliste mit Feldern für Menge, Kategorie und Notizen sowie automatischer Gruppierung nach Kategorien.
-*   **Optimierter "Neue Notiz"-Dialog:** Ein überarbeiteter, visueller Dialog macht die Auswahl des Notiztyps und des Speicherorts schneller und intuitiver.
-*   **Subtile UI-Animationen:** Sanfte Animationen beim Erstellen, Aktualisieren und Löschen von Notizen sorgen für ein flüssigeres Benutzererlebnis.
-*   **Permanente Statusanzeige:** Der Cloud-Sync-Status ist nun jederzeit prominent im Header sichtbar.
-*   **Inhalts-Vorschau:** Sehen Sie direkt auf der Notizkarte einen Auszug des Inhalts, um Notizen schneller zu identifizieren.
-*   **Erfolgsbenachrichtigungen:** Erhalten Sie eine kurzzeitige "Toast"-Nachricht als Bestätigung, wenn eine Notiz erfolgreich gespeichert wurde.
-*   **Manuelle Synchronisierung:** Ein dedizierter Button, um Cloud-Notizen bei Bedarf manuell neu zu laden.
-*   **Bestätigungs-Dialog:** Warnt Benutzer vor der manuellen Synchronisierung, um versehentliches Überschreiben zu verhindern.
-*   **Responsive Dark-Mode-UI:** Eine moderne und augenfreundliche Benutzeroberfläche, die auf allen Geräten gut aussieht.
-*   **Intuitive Bedienung:** Ein durchdachter Workflow vom Erstellen über das Anzeigen bis zum Bearbeiten und Löschen von Notizen.
-*   **Verbesserte Fehleranzeige:** Sync-Fehler werden in einer ausblendbaren Benachrichtigung angezeigt, ohne den Zugriff auf die Notizen zu blockieren.
-
-### 3. Benutzerhandbuch: Cloud-Synchronisierung einrichten
-
-Um Ihre Notizen über mehrere Geräte hinweg zu synchronisieren, müssen Sie die App mit einem GitHub Gist verbinden. Dies erfordert zwei Dinge: eine **Gist-ID** und einen **Personal Access Token (PAT)**.
-
-**Schritt 1: Personal Access Token (PAT) erstellen**
-
-1.  Gehen Sie zu Ihren [GitHub Developer Settings](https://github.com/settings/tokens).
-2.  Klicken Sie auf "Generate new token" und wählen Sie "Generate new token (classic)".
-3.  Geben Sie dem Token einen aussagekräftigen Namen (z.B. "Notizen-App-Sync").
-4.  Setzen Sie bei "Expiration" eine für Sie passende Gültigkeitsdauer.
-5.  Unter "Select scopes" setzen Sie **nur** den Haken bei `gist`. Dies stellt sicher, dass der Token nur die Berechtigung hat, Gists zu lesen und zu schreiben.
-6.  Klicken Sie auf "Generate token".
-7.  **WICHTIG:** Kopieren Sie den Token sofort und speichern Sie ihn an einem sicheren Ort (z.B. Passwort-Manager). Sie werden ihn nach dem Verlassen der Seite nicht wieder sehen können.
-
-**Schritt 2: Ein leeres Gist erstellen**
-
-1.  Gehen Sie zu [gist.github.com](https://gist.github.com).
-2.  Erstellen Sie ein neues, **geheimes (secret)** Gist.
-    *   **Dateiname:** `cloud-notes.json`
-    *   **Inhalt:** `{}` (zwei geschweifte Klammern)
-3.  Klicken Sie auf "Create secret gist".
-4.  Nach dem Erstellen sehen Sie in der URL-Leiste Ihres Browsers eine Adresse wie `https://gist.github.com/IhrUsername/abcdef1234567890`. Der lange Code am Ende (`abcdef1234567890`) ist Ihre **Gist-ID**. Kopieren Sie diese.
-
-**Schritt 3: App konfigurieren**
-
-1.  Öffnen Sie die Notizen-App.
-2.  Klicken Sie auf das Zahnrad-Icon oben rechts, um die Einstellungen zu öffnen.
-3.  Fügen Sie die kopierte **Gist-ID** und Ihren **Personal Access Token (PAT)** in die entsprechenden Felder ein.
-4.  Klicken Sie auf "Speichern".
-
-Die App wird nun versuchen, sich mit Ihrem Gist zu verbinden. Wenn alles geklappt hat, ist die "Cloud Notizen"-Sektion aktiv und bereit zur Nutzung.
-
-### 4. Entwickler-Setup
-
-Das Projekt ist als "build-less" Setup konzipiert und benötigt nur einen einfachen statischen Webserver.
-
-1.  **Repository klonen:**
-    ```bash
-    git clone <repository-url>
-    cd <repository-directory>
-    ```
-2.  **Webserver starten:**
-    Verwenden Sie ein beliebiges Tool, um einen lokalen Webserver im Projektverzeichnis zu starten. Ein einfacher Weg ist die Verwendung von `serve`:
-    ```bash
-    # Falls noch nicht installiert: npm install -g serve
-    serve .
-    ```
-3.  Öffnen Sie die angezeigte URL (z.B. `http://localhost:3000`) in Ihrem Browser.
-
-Für Entwicklungszwecke können Sie eine Fallback-Konfiguration direkt in `App.tsx` eintragen, um die Cloud-Funktionalität ohne UI-Eingabe zu testen.
-
-### 5. Technischer Stack
-
-*   **Framework:** React 18
-*   **Sprache:** TypeScript
-*   **Styling:** Tailwind CSS (via CDN)
-*   **Icons:** Inline SVG als React-Komponenten
-*   **Lokaler Speicher:** `window.localStorage`
-*   **Cloud-API:** GitHub Gist REST API
-
-### 6. Entwicklungsverlauf (Changelog)
-
-*   **v1.7.0 (UX Redesign & Bugfix):**
-    *   **Überarbeitet:** Der Dialog zur Auswahl eines neuen Notiztyps wurde komplett neugestaltet. Statt Radio-Buttons gibt es nun interaktive Karten mit Icons und direkten "Erstellen"-Aktionen, was den Workflow von drei auf zwei Klicks reduziert.
-    *   **Behoben:** Ein kritischer Bug wurde behoben, der das Erstellen neuer Notizen verhinderte. Die zugrundeliegende Zustandsverwaltung wurde bereinigt und robuster gestaltet.
-*   **v1.6.1 (Bugfix Release):**
-    *   **Behoben:** Ein kritischer Bug, der das zuverlässige Löschen von Cloud-Notizen verhinderte, wurde durch die Implementierung eines "optimistischen" Updates behoben. Die neue Logik verhindert Probleme mit veraltetem Zustand ("stale state") und stellt im Fehlerfall die Notiz sicher wieder her.
-*   **v1.6.0 (UX Improvement):**
-    *   **Hinzugefügt:** Subtile Animationen beim Erstellen, Aktualisieren und Löschen von Notizen für ein flüssigeres UI-Feedback.
-*   **v1.5.0 (UI Improvement):**
-    *   **Verbessert:** Der Synchronisierungsstatus der Cloud-Notizen wird nun direkt im Header neben dem App-Namen angezeigt, um eine bessere Sichtbarkeit zu gewährleisten.
-*   **v1.4.0 (UX Improvement):**
-    *   **Hinzugefügt:** Eine kurzzeitige "Toast"-Benachrichtigung wird nach dem erfolgreichen Speichern einer Notiz angezeigt, um dem Benutzer direktes Feedback zu geben.
-*   **v1.3.0 (Security Feature):**
-    *   **Hinzugefügt:** Ein Bestätigungsdialog wird vor einer manuellen Synchronisierung angezeigt, um den Benutzer vor dem versehentlichen Überschreiben von Daten zu warnen.
-*   **v1.2.1 (UI Improvement):**
-    *   **Verbessert:** Die Fehleranzeige für die Cloud-Synchronisierung wurde durch eine ausblendbare `Alert`-Komponente ersetzt. Dies verhindert, dass der Notizenbereich bei einem Sync-Fehler blockiert wird.
-*   **v1.2.0 (Feature Release):**
-    *   Inhalts-Vorschau auf Notizkarten hinzugefügt, die je nach Notiztyp entweder die ersten Textzeilen oder die Anzahl der Listeneinträge anzeigt.
-*   **v1.1.1 (Process Update):**
-    *   `instructions.md` erstellt, um Kernanweisungen und dauerhafte Aufgaben für die KI-Entwicklung zu dokumentieren.
-*   **v1.1.0 (Feature Release):**
-    *   Manueller Synchronisierungs-Button für Cloud-Notizen hinzugefügt, um die Synchronisierung bei Bedarf auszulösen.
-*   **v1.0.1 (Bugfix Release):**
-    *   **Behoben:** Eine Race Condition, die das Löschen von Cloud-Notizen unzuverlässig machte. Ein unnötiger Re-Sync wurde durch die Optimierung des Renderings mit `useMemo` verhindert.
-*   **v1.0.0 (Initial Release):**
-    *   Grundstruktur der App mit Header und zwei Notiz-Grids (Lokal & Cloud) erstellt.
-    *   Implementierung des kompletten Notiz-Lebenszyklus: Erstellen, Anzeigen, Bearbeiten, Löschen.
-    *   Einführung von drei Notiztypen: Text, Liste, Einkaufsliste.
-    *   Vollständige Integration mit `localStorage` für lokale Notizen und der GitHub Gist API für Cloud-Notizen.
-    *   Erstellung aller notwendigen Modals (`Settings`, `NewNoteType`, `NoteView`, `NoteEditor`).
-    *   Styling im Dark Mode mit Tailwind CSS.
-    *   Hinzufügen einer simplen Datenmigrationslogik für Notizen älteren Formats.
-
-### 7. Versions-Snapshot (Prompt-Grundlage)
-
-Dieser Abschnitt enthält einen vollständigen Code-Snapshot der Hauptkomponente `App.tsx` zum Zeitpunkt des Releases v1.7.0. Er dient als präzise, versionierte Blaupause und kann als verlässliche Grundlage für eine Weiterentwicklung (z.B. durch eine KI) dienen.
-
-```typescript
-// --- App.tsx Snapshot v1.7.0 ---
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Note, GithubGistSettings, NoteType } from './types';
 import useLocalStorage from './hooks/useLocalStorage';
@@ -396,20 +256,122 @@ const App: React.FC = () => {
       
       <main className="container mx-auto p-4 md:p-6">
         <section>
-          {/* ... Lokale Notizen ... */}
+          <h2 className="text-2xl font-semibold mb-4 border-b-2 border-primary pb-2">Lokale Notizen</h2>
+          {sortedLocalNotes.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {sortedLocalNotes.map(note => (
+                <NoteCard 
+                    key={note.id} 
+                    note={note} 
+                    onView={() => openNoteView(note, 'local')} 
+                    onDelete={() => handleDeleteNote(note.id, 'local')} 
+                    isDeleting={deletingNoteIds.has(note.id)}
+                    isUpdated={updatedNoteId === note.id}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-on-background/70">Keine lokalen Notizen. Erstellen Sie eine neue Notiz!</p>
+          )}
         </section>
 
         <section className="mt-12">
-            {/* ... Cloud Notizen ... */}
+            <div className="flex justify-between items-center mb-4 border-b-2 border-secondary pb-2">
+                <h2 className="text-2xl font-semibold">Cloud Notizen</h2>
+                {isCloudConfigured && (
+                    <button 
+                        onClick={() => setConfirmModalOpen(true)}
+                        disabled={syncStatus === 'syncing'}
+                        className="p-2 rounded-full text-secondary hover:bg-secondary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        aria-label="Cloud-Notizen synchronisieren"
+                    >
+                        <SyncIcon className={syncStatus === 'syncing' ? 'animate-spin' : ''} />
+                    </button>
+                )}
+            </div>
+          {isCloudConfigured ? (
+             <>
+                {syncStatus === 'error' && syncError && (
+                    <Alert message={syncError} onDismiss={handleDismissSyncError} />
+                )}
+
+                {syncStatus === 'syncing' && cloudNotes.length === 0 ? (
+                    <p className="text-on-background/70">Lade Cloud-Notizen...</p>
+                ) : sortedCloudNotes.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {sortedCloudNotes.map(note => (
+                        <NoteCard 
+                            key={note.id} 
+                            note={note} 
+                            onView={() => openNoteView(note, 'cloud')} 
+                            onDelete={() => handleDeleteNote(note.id, 'cloud')} 
+                            isDeleting={deletingNoteIds.has(note.id)}
+                            isUpdated={updatedNoteId === note.id}
+                        />
+                      ))}
+                    </div>
+                ) : syncStatus !== 'syncing' ? (
+                    <p className="text-on-background/70">Keine Cloud-Notizen gefunden.</p>
+                ) : null}
+             </>
+          ) : (
+            <div className="text-center bg-surface p-8 rounded-lg">
+              <p className="mb-4 text-lg">Die Cloud-Synchronisierung ist nicht eingerichtet.</p>
+              <button onClick={() => setSettingsModalOpen(true)} className="px-6 py-2 rounded-md bg-primary text-on-primary font-semibold hover:bg-primary-variant transition-colors">
+                Jetzt konfigurieren
+              </button>
+            </div>
+          )}
         </section>
       </main>
 
-      {/* ... Modal components ... */}
+      <SettingsModal 
+        isOpen={isSettingsModalOpen}
+        onClose={closeAllModals}
+        onSave={(newSettings) => {
+            setSettings(newSettings);
+            // reset cloud notes and trigger resync
+            setCloudNotes([]);
+            syncCloudNotes();
+        }}
+        initialSettings={settings}
+      />
       
+      <NewNoteTypeModal
+        isOpen={isNewNoteModalOpen}
+        onClose={closeAllModals}
+        onCreate={handleCreateNewNote}
+        isCloudConfigured={isCloudConfigured}
+      />
+
+      <NoteViewModal 
+        isOpen={isViewModalOpen}
+        onClose={closeAllModals}
+        onEdit={openNoteEditor}
+        onDelete={() => activeNote && activeNoteLocation && handleDeleteNote(activeNote.id, activeNoteLocation)}
+        note={activeNote}
+        onUpdateNote={(updatedNote) => handleSaveNote(updatedNote)}
+      />
+
+      <NoteEditorModal
+        isOpen={isEditorModalOpen}
+        onClose={closeAllModals}
+        onSave={handleSaveNote}
+        noteToEdit={activeNote}
+        noteType={activeNote?.noteType || newNoteConfig?.type || NoteType.Text}
+      />
+
+      <ConfirmModal
+        isOpen={isConfirmModalOpen}
+        onClose={closeAllModals}
+        onConfirm={handleConfirmSync}
+        title="Synchronisierung bestätigen"
+        message="Möchten Sie wirklich synchronisieren? Der aktuelle Stand der Cloud-Notizen wird geladen. Dies kann lokale Änderungen überschreiben, die noch nicht in der Cloud gespeichert wurden."
+      />
+
       {toastMessage && <Toast message={toastMessage} />}
     </div>
   );
 };
 
 export default App;
-```

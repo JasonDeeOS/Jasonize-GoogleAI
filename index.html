@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cloud & Lokale Notizen</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              background: '#121212',
+              surface: '#1e1e1e',
+              primary: '#bb86fc',
+              'primary-variant': '#3700b3',
+              secondary: '#03dac6',
+              'on-background': '#e0e0e0',
+              'on-surface': '#ffffff',
+              'on-primary': '#000000',
+              'on-secondary': '#000000',
+              danger: '#cf6679',
+            },
+            keyframes: {
+              'fade-in-right': {
+                '0%': { opacity: '0', transform: 'translateX(100%)' },
+                '100%': { opacity: '1', transform: 'translateX(0)' },
+              },
+              'scale-in': {
+                '0%': { opacity: '0', transform: 'scale(0.95)' },
+                '100%': { opacity: '1', transform: 'scale(1)' },
+              },
+              'highlight-pulse': {
+                '0%': { boxShadow: '0 0 0 0 rgba(187, 134, 252, 0.4)' },
+                '70%': { boxShadow: '0 0 0 6px rgba(187, 134, 252, 0)' },
+                '100%': { boxShadow: '0 0 0 0 rgba(187, 134, 252, 0)' },
+              },
+            },
+            animation: {
+              'fade-in-right': 'fade-in-right 0.5s ease-out forwards',
+              'scale-in': 'scale-in 0.3s ease-out forwards',
+              'highlight-pulse': 'highlight-pulse 1s ease-out',
+            },
+          },
+        },
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+  }
+}
+</script>
+</head>
+  <body class="bg-background text-on-background">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
