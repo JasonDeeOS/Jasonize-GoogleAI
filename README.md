@@ -9,10 +9,11 @@ Eine vielseitige, moderne Notizanwendung, die Benutzern maximale Flexibilität b
 1.  [High-Level-Konzept](#1-high-level-konzept)
 2.  [Features](#2-features)
 3.  [Benutzerhandbuch: Cloud-Synchronisierung einrichten](#3-benutzerhandbuch-cloud-synchronisierung-einrichten)
-4.  [Entwickler-Setup](#4-entwickler-setup)
-5.  [Technischer Stack](#5-technischer-stack)
-6.  [Entwicklungsverlauf (Changelog)](#6-entwicklungsverlauf-changelog)
-7.  [Versions-Snapshot (Prompt-Grundlage)](#7-versions-snapshot-prompt-grundlage)
+4.  [Lokales Entwickler-Setup](#4-lokales-entwickler-setup)
+5.  [Deployment (Vercel)](#5-deployment-vercel)
+6.  [Technischer Stack](#6-technischer-stack)
+7.  [Entwicklungsverlauf (Changelog)](#7-entwicklungsverlauf-changelog)
+8.  [Versions-Snapshot (Prompt-Grundlage)](#8-versions-snapshot-prompt-grundlage)
 
 ---
 
@@ -78,7 +79,7 @@ Um Ihre Notizen über mehrere Geräte hinweg zu synchronisieren, müssen Sie die
 
 Die App wird nun versuchen, sich mit Ihrem Gist zu verbinden. Wenn alles geklappt hat, ist die "Cloud Notizen"-Sektion aktiv und bereit zur Nutzung.
 
-### 4. Entwickler-Setup
+### 4. Lokales Entwickler-Setup
 
 Das Projekt ist als "build-less" Setup konzipiert und benötigt nur einen einfachen statischen Webserver.
 
@@ -97,7 +98,18 @@ Das Projekt ist als "build-less" Setup konzipiert und benötigt nur einen einfac
 
 Für Entwicklungszwecke können Sie eine Fallback-Konfiguration direkt in `App.tsx` eintragen, um die Cloud-Funktionalität ohne UI-Eingabe zu testen.
 
-### 5. Technischer Stack
+### 5. Deployment (Vercel)
+
+Dieses Projekt ist für ein einfaches Deployment auf [Vercel](https://vercel.com) optimiert.
+
+1.  **Projekt importieren:** Importieren Sie Ihr Git-Repository in Vercel.
+2.  **Konfiguration:**
+    *   **Framework Preset:** Vercel sollte automatisch `Other` erkennen. Falls nicht, wählen Sie es manuell aus.
+    *   **Build & Output Settings:** Dank der `vercel.json`-Datei im Repository müssen Sie **keine Build-Einstellungen überschreiben**. Vercel wird den Build-Schritt korrekt überspringen.
+    *   **Root Directory:** Belassen Sie diese Einstellung auf dem Standardwert (dem Stammverzeichnis Ihres Repositories).
+3.  **Deploy:** Klicken Sie auf "Deploy".
+
+### 6. Technischer Stack
 
 *   **Framework:** React 18
 *   **Sprache:** TypeScript
@@ -106,8 +118,10 @@ Für Entwicklungszwecke können Sie eine Fallback-Konfiguration direkt in `App.t
 *   **Lokaler Speicher:** `window.localStorage`
 *   **Cloud-API:** GitHub Gist REST API
 
-### 6. Entwicklungsverlauf (Changelog)
+### 7. Entwicklungsverlauf (Changelog)
 
+*   **v3.0.1 (Deployment Fix):**
+    *   **Hinzugefügt:** Eine `vercel.json`-Konfigurationsdatei wurde hinzugefügt, um die automatische Framework-Erkennung von Vercel zu deaktivieren. Dies behebt einen Build-Fehler und ermöglicht ein erfolgreiches Deployment als statische Seite.
 *   **v3.0.0 (Major UI/UX Overhaul):**
     *   **Hinzugefügt:** Die gesamte Anwendung wurde für eine "Mobile-First"-Benutzererfahrung optimiert.
     *   **Hinzugefügt:** Ein Floating Action Button (FAB) ersetzt den "Neue Notiz"-Button im Header für eine bessere mobile Erreichbarkeit.
@@ -169,7 +183,7 @@ Für Entwicklungszwecke können Sie eine Fallback-Konfiguration direkt in `App.t
     *   Styling im Dark Mode mit Tailwind CSS.
     *   Hinzufügen einer simplen Datenmigrationslogik für Notizen älteren Formats.
 
-### 7. Versions-Snapshot (Prompt-Grundlage)
+### 8. Versions-Snapshot (Prompt-Grundlage)
 
 Dieser Abschnitt enthält einen vollständigen Code-Snapshot der Hauptkomponente `App.tsx` zum Zeitpunkt des Releases v3.0.0. Er dient als präzise, versionierte Blaupause und kann als verlässliche Grundlage für eine Weiterentwicklung (z.B. durch eine KI) dienen.
 
