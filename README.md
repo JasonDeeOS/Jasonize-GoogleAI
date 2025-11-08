@@ -104,7 +104,7 @@ Dieses Projekt ist für ein einfaches Deployment auf [Vercel](https://vercel.com
 
 1.  **Projekt importieren:** Importieren Sie Ihr Git-Repository in Vercel.
 2.  **Konfiguration:**
-    *   **`vercel.json`:** Die `vercel.json`-Datei im Repository teilt Vercel explizit mit, dass es kein Framework erkennen und das Stammverzeichnis (`.`) als Ausgabeordner verwenden soll.
+    *   **`vercel.json`:** Die `vercel.json`-Datei im Repository teilt Vercel explizit mit, wie das Projekt behandelt werden soll. Sie deaktiviert die Framework-Erkennung, setzt das Ausgabe-Verzeichnis auf das Stammverzeichnis und **korrigiert den MIME-Typ für `.tsx`-Dateien**, um den "weißen Bildschirm"-Fehler zu beheben.
     *   **UI-Einstellungen:** Dank der `vercel.json`-Datei müssen Sie in der Vercel-Benutzeroberfläche **keine Build-Einstellungen überschreiben**. Belassen Sie alle Felder bei ihren Standardwerten.
 3.  **Deploy:** Klicken Sie auf "Deploy".
 
@@ -119,6 +119,8 @@ Dieses Projekt ist für ein einfaches Deployment auf [Vercel](https://vercel.com
 
 ### 7. Entwicklungsverlauf (Changelog)
 
+*   **v3.0.3 (Deployment Fix):**
+    *   **Behoben:** Die `vercel.json`-Datei wurde um eine `headers`-Regel erweitert, um `.tsx`-Dateien mit dem korrekten `Content-Type: text/javascript` auszuliefern. Dies behebt den "weißen Bildschirm"-Fehler nach dem Deployment auf Vercel.
 *   **v3.0.2 (Deployment Fix):**
     *   **Behoben:** Die `vercel.json`-Datei wurde erweitert, um das `outputDirectory` explizit auf das Stammverzeichnis zu setzen. Dies behebt den Vercel-Build-Fehler endgültig.
 *   **v3.0.1 (Deployment Fix):**
