@@ -106,7 +106,7 @@ Dieses Projekt ist für ein einfaches Deployment auf [Vercel](https://vercel.com
 2.  **Konfiguration:**
     *   **`vercel.json`:** Die `vercel.json`-Datei im Repository ist entscheidend. Sie teilt Vercel explizit mit, wie das Projekt behandelt werden soll (kein Framework, statisches Output-Verzeichnis, korrekte Header für `.tsx`-Dateien).
     *   **Babel Standalone:** Da dieses Projekt "build-less" ist und JSX/TypeScript direkt an den Browser sendet, wird Babel Standalone (`index.html`) verwendet, um den Code "on-the-fly" in gültiges JavaScript umzuwandeln.
-    *   **Babel Presets:** Der entscheidende Schritt ist, dem Babel-Skript über das Attribut `data-presets="react,typescript"` mitzuteilen, dass es sowohl JSX- als auch TypeScript-Syntax kompilieren soll.
+    *   **Babel Presets:** Der entscheidende Schritt ist, dem Babel-Skript über das Attribut `data-presets="typescript,react"` mitzuteilen, dass es sowohl TypeScript- als auch JSX-Syntax kompilieren soll. Die Reihenfolge ist hierbei wichtig, um TypeScript-Syntax korrekt zu entfernen.
     *   **Explizite Importe:** Es ist unerlässlich, in **allen `.tsx` und `.ts` Dateien** die lokalen Importe mit der korrekten Dateiendung zu versehen (z.B. `import App from './App.tsx'`). Dies ist notwendig, damit der Browser die exakte Datei anfordert und der Server sie mit dem korrekten MIME-Typ ausliefern kann.
     *   **UI-Einstellungen:** Dank der `vercel.json`-Datei müssen Sie in der Vercel-Benutzeroberfläche **keine Build-Einstellungen überschreiben**. Belassen Sie alle Felder bei ihren Standardwerten.
 3.  **Deploy:** Klicken Sie auf "Deploy".
@@ -123,6 +123,9 @@ Dieses Projekt ist für ein einfaches Deployment auf [Vercel](https://vercel.com
 
 ### 7. Entwicklungsverlauf (Changelog)
 
+*   **v3.0.7 (Deployment Fix):**
+    *   **Behoben:** Ein `SyntaxError` auf Vercel wurde endgültig behoben.
+    *   **Korrigiert:** Die Reihenfolge der Babel-Presets in `index.html` wurde zu `"typescript,react"` korrigiert. Dies stellt sicher, dass TypeScript-spezifische Syntax (wie Typdefinitionen) korrekt entfernt wird, bevor der JSX-Code verarbeitet wird.
 *   **v3.0.6 (Deployment Fix):**
     *   **Behoben:** Ein `SyntaxError` auf Vercel wurde behoben, der durch unkompilierte TypeScript-Syntax verursacht wurde.
     *   **Hinzugefügt:** Das Babel-Skript in `index.html` wurde mit `data-presets="react,typescript"` konfiguriert, um sowohl JSX als auch TypeScript im Browser zu kompilieren. Dies ist der finale Schritt für ein erfolgreiches Deployment.
