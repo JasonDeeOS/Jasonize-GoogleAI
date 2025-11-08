@@ -22,6 +22,11 @@ Die "Cloud & Lokale Notizen App" ist als reaktionsschnelle Single-Page-Applicati
 
 ### 2. Features
 
+*   **Offline-fähige Cloud-Notizen:** Erstellen und bearbeiten Sie Cloud-Notizen auch ohne Internetverbindung. Änderungen werden lokal gespeichert und automatisch synchronisiert, sobald wieder eine Verbindung besteht.
+*   **Intelligenter Einkaufslisten-Editor:**
+    *   **Smart Quick-Add:** Fügen Sie Artikel über eine intelligente Eingabezeile mit Autovervollständigung hinzu.
+    *   **Automatische Kategorisierung:** Artikel werden beim Hinzufügen automatisch der richtigen Kategorie zugeordnet.
+    *   **"Häufig gekauft":** Greifen Sie mit einem Klick auf eine Liste Ihrer am häufigsten gekauften Artikel zu, um Listen noch schneller zu erstellen.
 *   **Notizen verschieben (Lokal -> Cloud):** Übertragen Sie Notizen mit einem Klick vom lokalen Speicher in die Cloud.
 *   **Automatische Hintergrund-Synchronisierung:** Cloud-Notizen werden automatisch alle 60 Sekunden im Hintergrund aktualisiert, um Änderungen von anderen Geräten zu übernehmen.
 *   **Theme-Umschalter (Light/Dark):** Wechseln Sie mit einem Klick im Header zwischen einem hellen und einem dunklen Design.
@@ -105,6 +110,10 @@ Für Entwicklungszwecke können Sie eine Fallback-Konfiguration direkt in `App.t
 
 ### 6. Entwicklungsverlauf (Changelog)
 
+*   **v2.3.0 (Feature Release):**
+    *   **Hinzugefügt:** Cloud-Notizen sind jetzt offline-fähig. Sie können auch ohne Internetverbindung erstellt und bearbeitet werden. Änderungen werden lokal zwischengespeichert und automatisch synchronisiert, sobald wieder eine Verbindung besteht. Eine neue, robustere Synchronisierungs- und Merge-Logik wurde implementiert.
+*   **v2.2.0 (Feature Release):**
+    *   **Hinzugefügt:** Der Editor für Einkaufslisten wurde grundlegend überarbeitet. Er enthält nun eine "Smart Quick-Add"-Leiste mit Autovervollständigung, automatischer Kategorisierung und einem Bereich für "Häufig gekaufte" Artikel, um die Erstellung von Listen erheblich zu beschleunigen.
 *   **v2.1.0 (Feature Release):**
     *   **Hinzugefügt:** Eine Funktion zum Verschieben von lokalen Notizen in die Cloud wurde implementiert. Diese Aktion ist über die Notiz-Detailansicht verfügbar.
 *   **v2.0.4 (UI/UX Improvement):**
@@ -155,110 +164,83 @@ Für Entwicklungszwecke können Sie eine Fallback-Konfiguration direkt in `App.t
 
 ### 7. Versions-Snapshot (Prompt-Grundlage)
 
-Dieser Abschnitt enthält einen vollständigen Code-Snapshot der Hauptkomponente `App.tsx` zum Zeitpunkt des Releases v2.1.0. Er dient als präzise, versionierte Blaupause und kann als verlässliche Grundlage für eine Weiterentwicklung (z.B. durch eine KI) dienen.
+Dieser Abschnitt enthält einen vollständigen Code-Snapshot der Hauptkomponente `App.tsx` zum Zeitpunkt des Releases v2.3.0. Er dient als präzise, versionierte Blaupause und kann als verlässliche Grundlage für eine Weiterentwicklung (z.B. durch eine KI) dienen.
 
 ```typescript
-// --- App.tsx Snapshot v2.1.0 ---
+// --- App.tsx Snapshot v2.3.0 ---
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Note, GithubGistSettings, NoteType } from './types';
 import useLocalStorage from './hooks/useLocalStorage';
 import { getGistContent, updateGistContent } from './services/githubService';
 
 import NoteCard from './components/NoteCard';
-import SettingsModal from './components/SettingsModal';
-import NewNoteTypeModal from './components/NewNoteTypeModal';
-import NoteViewModal from './components/NoteViewModal';
-import NoteEditorModal from './components/NoteEditorModal';
-import Alert from './components/Alert';
-import ConfirmModal from './components/ConfirmModal';
-import Toast from './components/Toast';
-import CogIcon from './components/icons/CogIcon';
-import PlusIcon from './components/icons/PlusIcon';
-import SyncIcon from './components/icons/SyncIcon';
-import SunIcon from './components/icons/SunIcon';
-import MoonIcon from './components/icons/MoonIcon';
-
-const DEV_FALLBACK_SETTINGS: GithubGistSettings = {
-    gistId: '',
-    token: '',
-};
+// ... other component imports
 
 const App: React.FC = () => {
   const [localNotes, setLocalNotes] = useLocalStorage<Note[]>('local-notes', []);
-  const [cloudNotes, setCloudNotes] = useState<Note[]>([]);
-  const [settings, setSettings] = useLocalStorage<GithubGistSettings>('gist-settings', { gistId: '', token: '' });
-  const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('theme', 'dark');
+  const [cloudNotes, setCloudNotes] = useLocalStorage<Note[]>('cloud-notes', []);
+  // ... other state initializations
 
-  const effectiveSettings = useMemo(() => {
-    return (settings.gistId && settings.token) ? settings : DEV_FALLBACK_SETTINGS;
-  }, [settings]);
-  
-  const isCloudConfigured = !!(effectiveSettings.gistId && effectiveSettings.token);
+  const syncCloudNotes = useCallback(async () => {
+    if (!isCloudConfigured || isSyncingRef.current) return;
 
-  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
-  const [syncError, setSyncError] = useState<string | null>(null);
-  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const [deletingNoteIds, setDeletingNoteIds] = useState(new Set<string>());
-  const [updatedNoteId, setUpdatedNoteId] = useState<string | null>(null);
-
-  const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
-  const [isNewNoteModalOpen, setNewNoteModalOpen] = useState(false);
-  const [isViewModalOpen, setViewModalOpen] = useState(false);
-  const [isEditorModalOpen, setEditorModalOpen] = useState(false);
-  const [isConfirmModalOpen, setConfirmModalOpen] = useState(false);
-  
-  const [activeNote, setActiveNote] = useState<Note | null>(null);
-  const [activeNoteLocation, setActiveNoteLocation] = useState<'local' | 'cloud' | null>(null);
-  const [newNoteConfig, setNewNoteConfig] = useState<{ type: NoteType; location: 'local' | 'cloud' } | null>(null);
-  
-  const isSyncingRef = useRef(false);
-
-  const activeLocalNotes = useMemo(() => localNotes.filter(n => !n.deletedAt).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()), [localNotes]);
-  const deletedLocalNotes = useMemo(() => localNotes.filter(n => n.deletedAt).sort((a, b) => new Date(b.deletedAt!).getTime() - new Date(a.deletedAt!).getTime()), [localNotes]);
-  const activeCloudNotes = useMemo(() => cloudNotes.filter(n => !n.deletedAt).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()), [cloudNotes]);
-  const deletedCloudNotes = useMemo(() => cloudNotes.filter(n => n.deletedAt).sort((a, b) => new Date(b.deletedAt!).getTime() - new Date(a.deletedAt!).getTime()), [cloudNotes]);
-
-  useEffect(() => {
-    const root = window.document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-  }, [theme]);
-
-  // ... (rest of the component logic)
-  
-  const handleMoveNoteToCloud = async (noteId: string) => {
-    const noteToMove = localNotes.find(n => n.id === noteId);
-    if (!noteToMove || !isCloudConfigured) return;
-
-    closeAllModals();
+    isSyncingRef.current = true;
     setSyncStatus('syncing');
-
-    const newCloudNotes = [...cloudNotes, noteToMove];
-
+    setSyncError(null);
     try {
-        await updateGistContent(effectiveSettings, newCloudNotes);
-        setCloudNotes(newCloudNotes);
-        setLocalNotes(prev => prev.filter(n => n.id !== noteId));
+      const notesFromGist = await getGistContent(effectiveSettings);
+      
+      const localPendingNotes = cloudNotes.filter(n => n.isPendingSync);
 
-        setSyncStatus('synced');
-        setLastSyncTime(new Date().toLocaleTimeString('de-DE'));
-        setToastMessage(`Notiz "${noteToMove.title}" erfolgreich in die Cloud verschoben.`);
+      if (localPendingNotes.length === 0) {
+        setCloudNotes(migrateNotes(notesFromGist));
+      } else {
+        const notesFromGistMap = new Map(notesFromGist.map(n => [n.id, n]));
+        
+        localPendingNotes.forEach(pendingNote => {
+            const { isPendingSync, ...noteToSync } = pendingNote;
+            notesFromGistMap.set(noteToSync.id, noteToSync);
+        });
+
+        const notesToUpload = Array.from(notesFromGistMap.values());
+        
+        await updateGistContent(effectiveSettings, notesToUpload);
+        setCloudNotes(notesToUpload);
+      }
+
+      setSyncStatus('synced');
+      setLastSyncTime(new Date().toLocaleTimeString('de-DE'));
     } catch (error) {
-        console.error("Fehler beim Verschieben der Notiz in die Cloud:", error);
-        setSyncStatus('error');
-        setSyncError("Notiz konnte nicht in die Cloud verschoben werden.");
+      console.error("Sync-Fehler:", error);
+      setSyncStatus('error');
+      setSyncError(error instanceof Error ? error.message : "Unbekannter Fehler. Überprüfen Sie Ihre Internetverbindung und Konfiguration.");
+    } finally {
+        isSyncingRef.current = false;
+    }
+  }, [effectiveSettings, isCloudConfigured, cloudNotes, setCloudNotes]);
+
+  const handleSaveNote = (note: Note) => {
+    // ...
+    if (location === 'cloud') {
+        const noteWithPendingState = { ...note, isPendingSync: true };
+        const newCloudNotes = isUpdating 
+          ? cloudNotes.map(n => (n.id === note.id ? noteWithPendingState : n))
+          : [...cloudNotes, noteWithPendingState];
+        
+        setCloudNotes(newCloudNotes);
+        if (isUpdating) setUpdatedNoteId(note.id);
+        setToastMessage(`Notiz "${note.title}" zur Synchronisierung vorgemerkt.`);
+        
+        if (isCloudConfigured) {
+            syncCloudNotes();
+        }
     }
   };
-  
-  // ... rest of the functions
+
+  // ... other handlers updated to use isPendingSync and trigger sync
 
   return (
-    // ... JSX with new handlers in NoteViewModal
+    // JSX
   );
 };
 

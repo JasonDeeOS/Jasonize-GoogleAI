@@ -47,9 +47,8 @@ const NewNoteTypeModal: React.FC<NewNoteTypeModalProps> = ({ isOpen, onClose, on
                  </button>
                  <button 
                     onClick={() => handleCreate(opt.type, 'cloud')}
-                    disabled={!isCloudConfigured}
-                    className="px-3 py-1.5 rounded-md bg-secondary text-on-secondary text-sm font-semibold hover:bg-secondary-variant transition-colors disabled:bg-on-background/10 disabled:text-on-background/50 disabled:cursor-not-allowed whitespace-nowrap"
-                    title={!isCloudConfigured ? 'Cloud-Speicher ist nicht konfiguriert.' : 'In der Cloud speichern'}
+                    className="px-3 py-1.5 rounded-md bg-secondary text-on-secondary text-sm font-semibold hover:bg-secondary-variant transition-colors whitespace-nowrap"
+                    title={!isCloudConfigured ? 'Notiz wird lokal zwischengespeichert und synchronisiert, sobald die Cloud konfiguriert ist.' : 'In der Cloud speichern'}
                  >
                     Cloud erstellen
                  </button>

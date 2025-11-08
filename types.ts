@@ -22,6 +22,7 @@ export interface Note {
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
+  isPendingSync?: boolean;
 }
 
 export interface GithubGistSettings {

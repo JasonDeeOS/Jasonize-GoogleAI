@@ -2,6 +2,7 @@ import React from 'react';
 import { Note, ListItem, NoteType } from '../types';
 import TrashIcon from './icons/TrashIcon';
 import RestoreIcon from './icons/RestoreIcon';
+import CloudOffIcon from './icons/CloudOffIcon';
 
 interface NoteCardProps {
   note: Note;
@@ -12,9 +13,10 @@ interface NoteCardProps {
   isDeleting?: boolean;
   isUpdated?: boolean;
   view: 'active' | 'deleted';
+  location: 'local' | 'cloud';
 }
 
-const NoteCard: React.FC<NoteCardProps> = ({ note, onView, onDelete, onRestore, onPermanentDelete, isDeleting, isUpdated, view }) => {
+const NoteCard: React.FC<NoteCardProps> = ({ note, onView, onDelete, onRestore, onPermanentDelete, isDeleting, isUpdated, view, location }) => {
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     onDelete?.();
@@ -83,6 +85,12 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onView, onDelete, onRestore, 
       <p className="text-sm text-on-background/70 mt-auto">
         {view === 'deleted' && note.deletedAt ? `Gelöscht: ${formatDate(note.deletedAt)}` : `Erstellt: ${formatDate(note.createdAt)}`}
       </p>
+
+      {location === 'cloud' && note.isPendingSync && view === 'active' && (
+        <div className="absolute bottom-3 left-3" title="Synchronisierung ausstehend">
+          <CloudOffIcon className="w-4 h-4 text-on-background/50" />
+        </div>
+      )}
 
       {view === 'active' && (
         <button

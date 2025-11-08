@@ -27,7 +27,7 @@ const DEV_FALLBACK_SETTINGS: GithubGistSettings = {
 
 const App: React.FC = () => {
   const [localNotes, setLocalNotes] = useLocalStorage<Note[]>('local-notes', []);
-  const [cloudNotes, setCloudNotes] = useState<Note[]>([]);
+  const [cloudNotes, setCloudNotes] = useLocalStorage<Note[]>('cloud-notes', []);
   const [settings, setSettings] = useLocalStorage<GithubGistSettings>('gist-settings', { gistId: '', token: '' });
   const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('theme', 'dark');
 
@@ -63,6 +63,7 @@ const App: React.FC = () => {
   const deletedLocalNotes = useMemo(() => localNotes.filter(n => n.deletedAt).sort((a, b) => new Date(b.deletedAt!).getTime() - new Date(a.deletedAt!).getTime()), [localNotes]);
   const activeCloudNotes = useMemo(() => cloudNotes.filter(n => !n.deletedAt).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()), [cloudNotes]);
   const deletedCloudNotes = useMemo(() => cloudNotes.filter(n => n.deletedAt).sort((a, b) => new Date(b.deletedAt!).getTime() - new Date(a.deletedAt!).getTime()), [cloudNotes]);
+  const allNotes = useMemo(() => [...localNotes, ...cloudNotes], [localNotes, cloudNotes]);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -104,6 +105,7 @@ const App: React.FC = () => {
   
   useEffect(() => {
     setLocalNotes(prev => migrateNotes(prev));
+    setCloudNotes(prev => migrateNotes(prev));
   }, []); // Run migration once on mount for local notes
 
   const syncCloudNotes = useCallback(async () => {
@@ -114,17 +116,38 @@ const App: React.FC = () => {
     setSyncError(null);
     try {
       const notesFromGist = await getGistContent(effectiveSettings);
-      setCloudNotes(migrateNotes(notesFromGist));
+      
+      const localPendingNotes = cloudNotes.filter(n => n.isPendingSync);
+
+      // If no local changes are pending, we just accept the server state.
+      if (localPendingNotes.length === 0) {
+        setCloudNotes(migrateNotes(notesFromGist));
+      } else {
+        // Merge pending changes with the fetched notes
+        const notesFromGistMap = new Map(notesFromGist.map(n => [n.id, n]));
+        
+        localPendingNotes.forEach(pendingNote => {
+            // Remove the pending flag as we are trying to sync it
+            const { isPendingSync, ...noteToSync } = pendingNote;
+            notesFromGistMap.set(noteToSync.id, noteToSync);
+        });
+
+        const notesToUpload = Array.from(notesFromGistMap.values());
+        
+        await updateGistContent(effectiveSettings, notesToUpload);
+        setCloudNotes(notesToUpload); // Update local state with the successfully synced state
+      }
+
       setSyncStatus('synced');
       setLastSyncTime(new Date().toLocaleTimeString('de-DE'));
     } catch (error) {
       console.error("Sync-Fehler:", error);
       setSyncStatus('error');
-      setSyncError(error instanceof Error ? error.message : "Unbekannter Fehler");
+      setSyncError(error instanceof Error ? error.message : "Unbekannter Fehler. Überprüfen Sie Ihre Internetverbindung und Konfiguration.");
     } finally {
         isSyncingRef.current = false;
     }
-  }, [effectiveSettings, isCloudConfigured]);
+  }, [effectiveSettings, isCloudConfigured, cloudNotes, setCloudNotes]);
 
   // Automatic background sync
   useEffect(() => {
@@ -139,41 +162,37 @@ const App: React.FC = () => {
     return () => clearInterval(intervalId);
   }, [isCloudConfigured, syncCloudNotes]);
   
-  const handleSaveNote = async (note: Note) => {
+  const handleSaveNote = (note: Note) => {
     const isUpdating = !!activeNote;
     const location = isUpdating ? activeNoteLocation : newNoteConfig?.location;
+    
+    closeAllModals();
     
     if (!location) {
         console.error("Speicherort konnte nicht ermittelt werden. Abbruch.");
         setSyncError("Ein interner Fehler ist aufgetreten. Die Notiz konnte nicht gespeichert werden.");
         setSyncStatus('error');
-        closeAllModals();
         return;
     }
 
     if (location === 'local') {
         setLocalNotes(prev => isUpdating ? prev.map(n => n.id === note.id ? note : n) : [...prev, note]);
         if(isUpdating) setUpdatedNoteId(note.id);
-    } else if (location === 'cloud' && isCloudConfigured) {
-        setSyncStatus('syncing');
+        setToastMessage(`Notiz "${note.title}" erfolgreich gespeichert.`);
+    } else if (location === 'cloud') {
+        const noteWithPendingState = { ...note, isPendingSync: true };
         const newCloudNotes = isUpdating 
-          ? cloudNotes.map(n => (n.id === note.id ? note : n))
-          : [...cloudNotes, note];
+          ? cloudNotes.map(n => (n.id === note.id ? noteWithPendingState : n))
+          : [...cloudNotes, noteWithPendingState];
         
-        try {
-            await updateGistContent(effectiveSettings, newCloudNotes);
-            setCloudNotes(newCloudNotes);
-            if (isUpdating) setUpdatedNoteId(note.id);
-            setSyncStatus('synced');
-            setLastSyncTime(new Date().toLocaleTimeString('de-DE'));
-        } catch (error) {
-            console.error("Fehler beim Speichern der Cloud-Notiz:", error);
-            setSyncStatus('error');
-            setSyncError("Notiz konnte nicht in der Cloud gespeichert werden.");
+        setCloudNotes(newCloudNotes);
+        if (isUpdating) setUpdatedNoteId(note.id);
+        setToastMessage(`Notiz "${note.title}" zur Synchronisierung vorgemerkt.`);
+        
+        if (isCloudConfigured) {
+            syncCloudNotes();
         }
     }
-    setToastMessage(`Notiz "${note.title}" erfolgreich gespeichert.`);
-    closeAllModals();
   };
   
   const handleDeleteNote = (noteId: string, location: 'local' | 'cloud') => {
@@ -181,20 +200,11 @@ const App: React.FC = () => {
     const deletedAt = new Date().toISOString();
     if (location === 'local') {
       setLocalNotes(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt } : n));
-    } else if (location === 'cloud' && isCloudConfigured) {
-      setSyncStatus('syncing');
-      const newCloudNotes = cloudNotes.map(n => n.id === noteId ? { ...n, deletedAt } : n);
-      updateGistContent(effectiveSettings, newCloudNotes)
-        .then(() => {
-            setCloudNotes(newCloudNotes);
-            setSyncStatus('synced');
-            setLastSyncTime(new Date().toLocaleTimeString('de-DE'));
-        })
-        .catch(error => {
-            console.error("Fehler beim Verschieben der Cloud-Notiz in den Papierkorb:", error);
-            setSyncStatus('error');
-            setSyncError("Notiz konnte nicht gelöscht werden.");
-        });
+    } else if (location === 'cloud') {
+      setCloudNotes(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt, isPendingSync: true } : n));
+       if (isCloudConfigured) {
+            syncCloudNotes();
+        }
     }
     setToastMessage('Notiz in den Papierkorb verschoben.');
   };
@@ -202,20 +212,11 @@ const App: React.FC = () => {
   const handleRestoreNote = (noteId: string, location: 'local' | 'cloud') => {
     if (location === 'local') {
       setLocalNotes(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt: null } : n));
-    } else if (location === 'cloud' && isCloudConfigured) {
-       setSyncStatus('syncing');
-       const newCloudNotes = cloudNotes.map(n => n.id === noteId ? { ...n, deletedAt: null } : n);
-       updateGistContent(effectiveSettings, newCloudNotes)
-        .then(() => {
-            setCloudNotes(newCloudNotes);
-            setSyncStatus('synced');
-            setLastSyncTime(new Date().toLocaleTimeString('de-DE'));
-        })
-        .catch(error => {
-            console.error("Fehler beim Wiederherstellen der Cloud-Notiz:", error);
-            setSyncStatus('error');
-            setSyncError("Notiz konnte nicht wiederhergestellt werden.");
-        });
+    } else if (location === 'cloud') {
+       setCloudNotes(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt: null, isPendingSync: true } : n));
+       if (isCloudConfigured) {
+            syncCloudNotes();
+        }
     }
      setToastMessage('Notiz wiederhergestellt.');
   };
@@ -239,7 +240,11 @@ const App: React.FC = () => {
               console.error("Fehler beim endgültigen Löschen der Cloud-Notiz:", error);
               setSyncStatus('error');
               setSyncError("Notiz konnte nicht endgültig gelöscht werden.");
+              // Restore note to UI on failure
+              setCloudNotes(cloudNotes);
             });
+      } else if (location === 'cloud' && !isCloudConfigured) {
+         setCloudNotes(prev => prev.filter(n => n.id !== noteId));
       }
 
       setDeletingNoteIds(prev => {
@@ -251,27 +256,20 @@ const App: React.FC = () => {
     }, 300);
   };
 
-  const handleMoveNoteToCloud = async (noteId: string) => {
+  const handleMoveNoteToCloud = (noteId: string) => {
     const noteToMove = localNotes.find(n => n.id === noteId);
-    if (!noteToMove || !isCloudConfigured) return;
+    if (!noteToMove) return;
 
     closeAllModals();
-    setSyncStatus('syncing');
+    
+    const pendingNote = { ...noteToMove, isPendingSync: true };
+    setCloudNotes(prev => [...prev, pendingNote]);
+    setLocalNotes(prev => prev.filter(n => n.id !== noteId));
 
-    const newCloudNotes = [...cloudNotes, noteToMove];
-
-    try {
-        await updateGistContent(effectiveSettings, newCloudNotes);
-        setCloudNotes(newCloudNotes);
-        setLocalNotes(prev => prev.filter(n => n.id !== noteId));
-
-        setSyncStatus('synced');
-        setLastSyncTime(new Date().toLocaleTimeString('de-DE'));
-        setToastMessage(`Notiz "${noteToMove.title}" erfolgreich in die Cloud verschoben.`);
-    } catch (error) {
-        console.error("Fehler beim Verschieben der Notiz in die Cloud:", error);
-        setSyncStatus('error');
-        setSyncError("Notiz konnte nicht in die Cloud verschoben werden.");
+    setToastMessage(`Notiz "${noteToMove.title}" wird in die Cloud verschoben.`);
+    
+    if (isCloudConfigured) {
+        syncCloudNotes();
     }
   };
 
@@ -318,6 +316,7 @@ const App: React.FC = () => {
   };
 
   const renderSyncStatus = () => {
+      if (!isCloudConfigured && cloudNotes.length > 0) return <span className="text-yellow-400">Cloud nicht konfiguriert</span>
       if (!isCloudConfigured) return null;
       switch (syncStatus) {
           case 'syncing': return <span className="text-yellow-400">Synchronisiere...</span>;
@@ -355,6 +354,7 @@ const App: React.FC = () => {
                     key={note.id} 
                     note={note} 
                     view='active'
+                    location='local'
                     onView={() => openNoteView(note, 'local')} 
                     onDelete={() => handleDeleteNote(note.id, 'local')} 
                     isDeleting={deletingNoteIds.has(note.id)}
@@ -381,13 +381,13 @@ const App: React.FC = () => {
                     </button>
                 )}
             </div>
-          {isCloudConfigured ? (
+          
              <>
                 {syncStatus === 'error' && syncError && (
                     <Alert message={syncError} onDismiss={handleDismissSyncError} />
                 )}
 
-                {syncStatus === 'syncing' && activeCloudNotes.length === 0 ? (
+                {syncStatus === 'syncing' && activeCloudNotes.length === 0 && isCloudConfigured ? (
                     <p className="text-on-background/70">Lade Cloud-Notizen...</p>
                 ) : activeCloudNotes.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -396,6 +396,7 @@ const App: React.FC = () => {
                             key={note.id} 
                             note={note} 
                             view='active'
+                            location='cloud'
                             onView={() => openNoteView(note, 'cloud')} 
                             onDelete={() => handleDeleteNote(note.id, 'cloud')} 
                             isDeleting={deletingNoteIds.has(note.id)}
@@ -404,17 +405,18 @@ const App: React.FC = () => {
                       ))}
                     </div>
                 ) : syncStatus !== 'syncing' ? (
+                  !isCloudConfigured ? (
+                    <div className="text-center bg-surface p-8 rounded-lg">
+                      <p className="mb-4 text-lg">Die Cloud-Synchronisierung ist nicht eingerichtet.</p>
+                      <button onClick={() => setSettingsModalOpen(true)} className="px-6 py-2 rounded-md bg-primary text-on-primary font-semibold hover:bg-primary-variant transition-colors">
+                        Jetzt konfigurieren
+                      </button>
+                    </div>
+                  ) : (
                     <p className="text-on-background/70">Keine Cloud-Notizen gefunden.</p>
+                  )
                 ) : null}
              </>
-          ) : (
-            <div className="text-center bg-surface p-8 rounded-lg">
-              <p className="mb-4 text-lg">Die Cloud-Synchronisierung ist nicht eingerichtet.</p>
-              <button onClick={() => setSettingsModalOpen(true)} className="px-6 py-2 rounded-md bg-primary text-on-primary font-semibold hover:bg-primary-variant transition-colors">
-                Jetzt konfigurieren
-              </button>
-            </div>
-          )}
         </section>
         
         {(deletedLocalNotes.length > 0 || deletedCloudNotes.length > 0) && (
@@ -426,6 +428,7 @@ const App: React.FC = () => {
                             key={note.id} 
                             note={note} 
                             view='deleted'
+                            location='local'
                             onView={() => {}} 
                             onRestore={() => handleRestoreNote(note.id, 'local')}
                             onPermanentDelete={() => handlePermanentDeleteNote(note.id, 'local')}
@@ -437,6 +440,7 @@ const App: React.FC = () => {
                             key={note.id} 
                             note={note} 
                             view='deleted'
+                            location='cloud'
                             onView={() => {}} 
                             onRestore={() => handleRestoreNote(note.id, 'cloud')}
                             onPermanentDelete={() => handlePermanentDeleteNote(note.id, 'cloud')}
@@ -453,8 +457,6 @@ const App: React.FC = () => {
         onClose={closeAllModals}
         onSave={(newSettings) => {
             setSettings(newSettings);
-            // reset cloud notes and trigger resync
-            setCloudNotes([]);
             syncCloudNotes();
         }}
         initialSettings={settings}
@@ -475,7 +477,7 @@ const App: React.FC = () => {
         note={activeNote}
         onUpdateNote={(updatedNote) => handleSaveNote(updatedNote)}
         location={activeNoteLocation}
-        onMoveToCloud={() => activeNote && handleMoveNoteToCloud(activeNote.id)}
+        onMoveToCloud={() => activeNote && activeNoteLocation === 'local' && handleMoveNoteToCloud(activeNote.id)}
       />
 
       <NoteEditorModal
@@ -484,6 +486,7 @@ const App: React.FC = () => {
         onSave={handleSaveNote}
         noteToEdit={activeNote}
         noteType={activeNote?.noteType || newNoteConfig?.type || NoteType.Text}
+        allNotes={allNotes}
       />
 
       <ConfirmModal
@@ -491,7 +494,7 @@ const App: React.FC = () => {
         onClose={closeAllModals}
         onConfirm={handleConfirmSync}
         title="Synchronisierung bestätigen"
-        message="Möchten Sie wirklich synchronisieren? Der aktuelle Stand der Cloud-Notizen wird geladen. Dies kann lokale Änderungen überschreiben, die noch nicht in der Cloud gespeichert wurden."
+        message="Möchten Sie wirklich synchronisieren? Der aktuelle Stand der Cloud-Notizen wird geladen und mit Ihren lokalen Änderungen zusammengeführt. Dies ist in der Regel sicher."
       />
 
       {toastMessage && <Toast message={toastMessage} />}
