@@ -104,7 +104,8 @@ Dieses Projekt ist für ein einfaches Deployment auf [Vercel](https://vercel.com
 
 1.  **Projekt importieren:** Importieren Sie Ihr Git-Repository in Vercel.
 2.  **Konfiguration:**
-    *   **`vercel.json`:** Die `vercel.json`-Datei im Repository teilt Vercel explizit mit, wie das Projekt behandelt werden soll. Sie deaktiviert die Framework-Erkennung, setzt das Ausgabe-Verzeichnis auf das Stammverzeichnis und **korrigiert den MIME-Typ für `.tsx`-Dateien**, um den "weißen Bildschirm"-Fehler zu beheben.
+    *   **`vercel.json`:** Die `vercel.json`-Datei im Repository teilt Vercel explizit mit, wie das Projekt behandelt werden soll. Sie deaktiviert die Framework-Erkennung, setzt das Ausgabe-Verzeichnis auf das Stammverzeichnis und **korrigiert den MIME-Typ für `.tsx`-Dateien**.
+    *   **Babel Standalone:** Da dieses Projekt "build-less" ist und JSX direkt an den Browser sendet, wird Babel Standalone (`index.html`) verwendet, um den JSX-Code "on-the-fly" in gültiges JavaScript umzuwandeln. Dies ist der Schlüssel, um den `SyntaxError` zu beheben, der ansonsten zu einem "weißen Bildschirm" führen würde.
     *   **UI-Einstellungen:** Dank der `vercel.json`-Datei müssen Sie in der Vercel-Benutzeroberfläche **keine Build-Einstellungen überschreiben**. Belassen Sie alle Felder bei ihren Standardwerten.
 3.  **Deploy:** Klicken Sie auf "Deploy".
 
@@ -113,12 +114,16 @@ Dieses Projekt ist für ein einfaches Deployment auf [Vercel](https://vercel.com
 *   **Framework:** React 18
 *   **Sprache:** TypeScript
 *   **Styling:** Tailwind CSS (via CDN)
+*   **In-Browser-Kompilierung:** Babel Standalone
 *   **Icons:** Inline SVG als React-Komponenten
 *   **Lokaler Speicher:** `window.localStorage`
 *   **Cloud-API:** GitHub Gist REST API
 
 ### 7. Entwicklungsverlauf (Changelog)
 
+*   **v3.0.4 (Deployment Fix):**
+    *   **Behoben:** Ein `SyntaxError` auf der Vercel-Deployment-Seite ("weißer Bildschirm") wurde behoben.
+    *   **Hinzugefügt:** Babel Standalone wurde in die `index.html` integriert, um JSX-Code (`.tsx`) direkt im Browser in gültiges JavaScript zu kompilieren. Dies ist notwendig, da Browser JSX nicht nativ verstehen.
 *   **v3.0.3 (Deployment Fix):**
     *   **Behoben:** Die `vercel.json`-Datei wurde um eine `headers`-Regel erweitert, um `.tsx`-Dateien mit dem korrekten `Content-Type: text/javascript` auszuliefern. Dies behebt den "weißen Bildschirm"-Fehler nach dem Deployment auf Vercel.
 *   **v3.0.2 (Deployment Fix):**
