@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Note, NoteType, ListItem } from '../types';
 import CloseIcon from './icons/CloseIcon';
@@ -16,14 +15,29 @@ interface NoteEditorModalProps {
   allNotes: Note[];
 }
 
+const highlightMatch = (text: string, query: string) => {
+  if (!query) return <span>{text}</span>;
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  const startIndex = lowerText.indexOf(lowerQuery);
+  if (startIndex === -1) return <span>{text}</span>;
+
+  const endIndex = startIndex + query.length;
+  return (
+    <span>
+      {text.substring(0, startIndex)}
+      <strong className="text-primary">{text.substring(startIndex, endIndex)}</strong>
+      {text.substring(endIndex)}
+    </span>
+  );
+};
+
 const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSave, noteToEdit, noteType, allNotes }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState<string | ListItem[]>('');
   
-  // State for smart shopping list features
   const frequentlyBought = useShoppingHistory(allNotes);
   const [quickAddItemText, setQuickAddItemText] = useState('');
-  const [suggestions, setSuggestions] = useState<{ name: string; category: string }[]>([]);
   const [frequentlyBoughtVisible, setFrequentlyBoughtVisible] = useState(true);
 
 
@@ -37,34 +51,64 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
         setContent(noteType === NoteType.Text ? '' : []);
       }
       setQuickAddItemText('');
-      setSuggestions([]);
     }
   }, [isOpen, noteToEdit, noteType]);
   
-  const handleQuickAddItemChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setQuickAddItemText(value);
-
-    if (value.length < 2) {
-      setSuggestions([]);
-      return;
+  const filteredSuggestions = useMemo(() => {
+    if (quickAddItemText.length < 2) {
+      return [];
     }
+    const lowerCaseValue = quickAddItemText.toLowerCase();
 
-    const lowerCaseValue = value.toLowerCase();
-    
-    const historyMatches = frequentlyBought
-        .filter(item => item.toLowerCase().includes(lowerCaseValue))
-        .map(name => ({ name, category: COMMON_GROCERY_ITEMS.find(i => i.name === name)?.category || 'Sonstiges' }));
+    const frequentlyBoughtSet = new Set(frequentlyBought);
 
-    const commonItemsMatches = COMMON_GROCERY_ITEMS
-        .filter(item => item.name.toLowerCase().includes(lowerCaseValue));
-    
-    const combined = [...historyMatches, ...commonItemsMatches];
-    const uniqueNames = new Set(combined.map(i => i.name));
-    const uniqueSuggestions = Array.from(uniqueNames).map(name => combined.find(i => i.name === name)!);
+    const scoredSuggestions = COMMON_GROCERY_ITEMS.map(item => {
+      let score = 0;
+      const lowerCaseName = item.name.toLowerCase();
 
-    setSuggestions(uniqueSuggestions.slice(0, 5));
-  };
+      if (lowerCaseName.startsWith(lowerCaseValue)) {
+        score += 10;
+      } else if (lowerCaseName.includes(lowerCaseValue)) {
+        score += 1;
+      }
+      
+      if (frequentlyBoughtSet.has(item.name)) {
+        score += 5; // Boost score for frequently bought items
+      }
+
+      return { ...item, score };
+    }).filter(item => item.score > 0);
+
+    // Add items from history that might not be in the common list
+    frequentlyBought.forEach(name => {
+        if (!scoredSuggestions.some(s => s.name === name)) {
+            const lowerCaseName = name.toLowerCase();
+            let score = 5; // Base score for being in history
+             if (lowerCaseName.startsWith(lowerCaseValue)) {
+                score += 10;
+            } else if (lowerCaseName.includes(lowerCaseValue)) {
+                score += 1;
+            }
+            if (score > 5) { // Only include if it's a match
+                 scoredSuggestions.push({ name, category: 'Sonstiges', score });
+            }
+        }
+    });
+
+    scoredSuggestions.sort((a, b) => b.score - a.score);
+
+    const uniqueNames = new Set();
+    const uniqueSuggestions = scoredSuggestions.filter(item => {
+        if (uniqueNames.has(item.name)) {
+            return false;
+        }
+        uniqueNames.add(item.name);
+        return true;
+    });
+
+    return uniqueSuggestions.slice(0, 5);
+  }, [quickAddItemText, frequentlyBought]);
+
 
   const handleAddItem = (name: string, category?: string) => {
     const trimmedName = name.trim();
@@ -72,9 +116,7 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
     
     const existingItem = (Array.isArray(content) ? content : []).find(item => item.text.toLowerCase() === trimmedName.toLowerCase());
     if (existingItem) {
-        // Optional: Maybe highlight the existing item instead of doing nothing
         setQuickAddItemText('');
-        setSuggestions([]);
         return;
     }
 
@@ -89,7 +131,6 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
     };
     setContent(c => [...(Array.isArray(c) ? c : []), newItem]);
     setQuickAddItemText('');
-    setSuggestions([]);
   };
 
   const handleSuggestionClick = (suggestion: { name: string; category: string }) => {
@@ -116,13 +157,15 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
     onSave(finalNote);
   };
   
-  const addListItem = () => {
-    const newItem: ListItem = { id: Date.now().toString(), text: '', completed: false };
-    if (noteType === NoteType.ShoppingList) {
-        newItem.quantity = '';
-        newItem.notes = '';
-        newItem.category = '';
-    }
+  const addListItem = (category = 'Sonstiges') => {
+    const newItem: ListItem = { 
+      id: Date.now().toString(), 
+      text: '', 
+      completed: false,
+      quantity: '',
+      notes: '',
+      category: category,
+    };
     setContent(c => [...(Array.isArray(c) ? c : []), newItem]);
   };
   
@@ -155,13 +198,20 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
                         <button onClick={() => removeListItem(item.id)} className="p-2 text-on-surface/60 hover:text-danger"><TrashIcon /></button>
                     </div>
                 ))}
-                <button onClick={addListItem} className="mt-2 px-3 py-1.5 rounded-md border-2 border-dashed border-primary/50 text-primary hover:bg-primary/10 transition-colors">
+                <button onClick={() => addListItem()} className="mt-2 px-3 py-1.5 rounded-md border-2 border-dashed border-primary/50 text-primary hover:bg-primary/10 transition-colors">
                     Eintrag hinzufügen
                 </button>
             </div>
         );
       case NoteType.ShoppingList:
         const listContent = Array.isArray(content) ? content : [];
+        const groupedItems = listContent.reduce((acc, item) => {
+            const category = item.category || 'Sonstiges';
+            if (!acc[category]) acc[category] = [];
+            acc[category].push(item);
+            return acc;
+        }, {} as Record<string, ListItem[]>);
+
         return (
             <div>
                 {/* Smart Quick Add Bar */}
@@ -171,17 +221,17 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
                         <input
                             type="text"
                             value={quickAddItemText}
-                            onChange={handleQuickAddItemChange}
+                            onChange={(e) => setQuickAddItemText(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleAddItem(quickAddItemText)}
-                            placeholder="Artikel hinzufügen (z.B. 2kg Äpfel)"
+                            placeholder="Artikel hinzufügen..."
                             className="w-full bg-transparent text-on-background placeholder-on-background/50 focus:ring-0 border-0 outline-none"
                         />
                     </div>
-                    {suggestions.length > 0 && (
+                    {filteredSuggestions.length > 0 && (
                         <div className="absolute z-10 w-full bg-surface border border-on-background/20 rounded-b-lg shadow-lg mt-1">
-                            {suggestions.map(s => (
-                                <div key={s.name} onClick={() => handleSuggestionClick(s)} className="p-2 hover:bg-primary/20 cursor-pointer">
-                                    <span className="font-semibold">{s.name}</span>
+                            {filteredSuggestions.map(s => (
+                                <div key={s.name} onClick={() => handleSuggestionClick(s)} className="p-3 hover:bg-primary/20 cursor-pointer">
+                                    <span className="font-semibold">{highlightMatch(s.name, quickAddItemText)}</span>
                                     <span className="text-xs text-on-background/60 ml-2">({s.category})</span>
                                 </div>
                             ))}
@@ -207,27 +257,35 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
                     </div>
                 )}
 
-
-                {/* Manual Editor */}
-                {listContent.map((item, index) => (
-                    <div key={item.id} className="flex items-start gap-2 mb-3 p-2 border border-on-background/10 rounded-md">
-                        <input type="checkbox" checked={item.completed} onChange={e => updateListItem(item.id, { completed: e.target.checked })} className="mt-2 h-5 w-5 rounded text-primary bg-surface border-on-background/30 focus:ring-primary cursor-pointer" />
-                        <div className="flex-grow space-y-1">
-                             <input type="text" value={item.text} onChange={e => updateListItem(item.id, { text: e.target.value })} placeholder={`Eintrag ${index + 1}`} className="w-full bg-transparent p-1 text-on-background font-semibold focus:ring-0 focus:border-primary border-0 border-b-2 border-on-background/20 outline-none" />
-                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
-                                 <input type="text" value={item.quantity || ''} onChange={e => updateListItem(item.id, { quantity: e.target.value })} placeholder="Menge (z.B. 1kg)" className="w-full bg-on-background/10 rounded-sm p-1 text-on-background/80 placeholder-on-background/50 focus:ring-1 focus:ring-primary outline-none"/>
-                                 <input list="categories" value={item.category || ''} onChange={e => updateListItem(item.id, { category: e.target.value })} placeholder="Kategorie" className="w-full bg-on-background/10 rounded-sm p-1 text-on-background/80 placeholder-on-background/50 focus:ring-1 focus:ring-primary outline-none"/>
-                                 <input type="text" value={item.notes || ''} onChange={e => updateListItem(item.id, { notes: e.target.value })} placeholder="Notizen (z.B. Bio)" className="w-full bg-on-background/10 rounded-sm p-1 text-on-background/80 placeholder-on-background/50 focus:ring-1 focus:ring-primary outline-none"/>
-                             </div>
-                        </div>
-                        <button onClick={() => removeListItem(item.id)} className="p-2 text-on-surface/60 hover:text-danger self-center"><TrashIcon /></button>
-                    </div>
-                ))}
+                {/* Items grouped by category */}
+                <div className="space-y-6">
+                    {SHOPPING_CATEGORIES.map(category => (
+                        groupedItems[category] && (
+                            <div key={category}>
+                                <h4 className="text-md font-semibold text-primary mb-2 border-b border-on-background/20 pb-1">{category}</h4>
+                                <div className="space-y-2">
+                                    {groupedItems[category].map(item => (
+                                        <div key={item.id} className="grid grid-cols-[auto,1fr,auto] sm:flex sm:items-center gap-2 p-1.5 rounded-md hover:bg-on-background/5">
+                                            <input type="checkbox" checked={item.completed} onChange={e => updateListItem(item.id, { completed: e.target.checked })} className="flex-shrink-0 h-5 w-5 rounded text-primary bg-surface border-on-background/30 focus:ring-primary cursor-pointer" />
+                                            <input type="text" value={item.text} onChange={e => updateListItem(item.id, { text: e.target.value })} placeholder="Artikelname" className="col-span-2 sm:col-auto sm:flex-grow bg-transparent p-1 text-on-background font-semibold focus:ring-0 focus:border-primary border-0 border-b border-on-background/20 outline-none" />
+                                            <div className="col-start-2 col-span-2 sm:col-auto flex items-center gap-2">
+                                                <input type="text" value={item.quantity || ''} onChange={e => updateListItem(item.id, { quantity: e.target.value })} placeholder="Menge" className="w-full sm:w-24 bg-on-background/10 rounded-sm p-1 text-sm text-on-background/80 placeholder-on-background/50 focus:ring-1 focus:ring-primary outline-none"/>
+                                                <input type="text" value={item.notes || ''} onChange={e => updateListItem(item.id, { notes: e.target.value })} placeholder="Notiz" className="w-full sm:w-24 bg-on-background/10 rounded-sm p-1 text-sm text-on-background/80 placeholder-on-background/50 focus:ring-1 focus:ring-primary outline-none"/>
+                                                <button onClick={() => removeListItem(item.id)} className="p-2 text-on-surface/60 hover:text-danger"><TrashIcon className="w-4 h-4" /></button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )
+                    ))}
+                </div>
+                
                 <datalist id="categories">
                     {SHOPPING_CATEGORIES.map(cat => <option key={cat} value={cat} />)}
                 </datalist>
-                <button onClick={addListItem} className="mt-2 px-3 py-1.5 rounded-md border-2 border-dashed border-primary/50 text-primary hover:bg-primary/10 transition-colors">
-                    Manuellen Eintrag hinzufügen
+                <button onClick={() => addListItem()} className="mt-4 px-3 py-1.5 rounded-md border-2 border-dashed border-primary/50 text-primary hover:bg-primary/10 transition-colors">
+                    Leeren Eintrag hinzufügen
                 </button>
             </div>
         );
@@ -237,8 +295,14 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-surface rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+    <div 
+      className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-4 pt-20"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-surface rounded-t-lg sm:rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col animate-slide-in-up"
+        onClick={e => e.stopPropagation()}
+      >
         <header className="p-4 border-b border-on-background/20 flex justify-between items-center flex-shrink-0">
           <h2 className="text-2xl font-bold text-on-surface">{noteToEdit ? 'Notiz bearbeiten' : 'Neue Notiz'}</h2>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-on-background/20 transition-colors"><CloseIcon /></button>

@@ -50,16 +50,16 @@ const NoteViewModal: React.FC<NoteViewModalProps> = ({ isOpen, onClose, onEdit, 
             }, {} as Record<string, ListItem[]>);
 
             return Object.entries(groupedItems).map(([category, items]) => (
-                <div key={category} className="mb-4">
-                    <h4 className="text-md font-semibold text-primary mb-2 border-b border-on-background/20 pb-1">{category}</h4>
-                    <ul className="space-y-2">
+                <div key={category} className="mb-6">
+                    <h4 className="text-lg font-bold text-primary mb-3 border-b-2 border-primary/30 pb-2">{category}</h4>
+                    <ul className="space-y-3">
                         {items.map(item => (
                              <li key={item.id} className="flex items-start">
                                 <input type="checkbox" checked={item.completed} onChange={() => handleToggleListItem(item.id)} className="mt-1 h-5 w-5 rounded text-primary bg-surface border-on-background/30 focus:ring-primary cursor-pointer" />
                                 <div className="ml-3">
-                                    <span className={`block ${item.completed ? 'line-through text-on-background/50' : ''}`}>{item.text}</span>
-                                    {(item.quantity || item.notes) && <span className="text-sm text-on-background/60 block">
-                                      {item.quantity && `(${item.quantity})`}{item.quantity && item.notes && " - "}{item.notes}
+                                    <span className={`block text-on-surface ${item.completed ? 'line-through text-on-background/50' : ''}`}>{item.text}</span>
+                                    {(item.quantity || item.notes) && <span className="text-sm text-on-background/60 block mt-1">
+                                      {item.quantity && `Menge: ${item.quantity}`}{item.quantity && item.notes && " - "}{item.notes}
                                     </span>}
                                 </div>
                             </li>
@@ -85,11 +85,17 @@ const NoteViewModal: React.FC<NoteViewModalProps> = ({ isOpen, onClose, onEdit, 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-surface rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+    <div 
+      className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-4 pt-20"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-surface rounded-t-lg sm:rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-slide-in-up"
+        onClick={e => e.stopPropagation()}
+      >
         <header className="p-4 border-b border-on-background/20 flex justify-between items-center flex-shrink-0">
           <h2 className="text-2xl font-bold text-on-surface truncate pr-4">{note.title}</h2>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-0 sm:space-x-2">
              {location === 'local' && (
                 <button onClick={onMoveToCloud} className="p-2 rounded-full hover:bg-on-background/20 transition-colors" aria-label="In die Cloud verschieben" title="In die Cloud verschieben">
                     <CloudUploadIcon />

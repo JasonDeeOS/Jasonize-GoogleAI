@@ -95,7 +95,7 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onView, onDelete, onRestore, 
       {view === 'active' && (
         <button
           onClick={handleDelete}
-          className="absolute top-3 right-3 p-1 rounded-full bg-surface text-on-surface/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-danger hover:text-white"
+          className="absolute top-3 right-3 p-1 rounded-full bg-surface text-on-surface/60 opacity-70 group-hover:opacity-100 transition-opacity duration-300 hover:bg-danger hover:text-white"
           aria-label="Notiz löschen"
         >
           <TrashIcon />
@@ -103,7 +103,7 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onView, onDelete, onRestore, 
       )}
 
       {view === 'deleted' && (
-        <div className="absolute top-3 right-3 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="absolute top-3 right-3 flex space-x-1 opacity-70 group-hover:opacity-100 transition-opacity duration-300">
            <button
             onClick={handleRestore}
             className="p-1 rounded-full bg-surface text-on-surface/60 hover:bg-secondary hover:text-white"

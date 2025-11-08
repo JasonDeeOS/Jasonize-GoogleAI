@@ -327,7 +327,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen font-sans">
+    <div className="min-h-screen font-sans pb-24">
       <header className="sticky top-0 bg-surface/80 backdrop-blur-sm shadow-md z-10">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center space-x-3">
@@ -339,7 +339,6 @@ const App: React.FC = () => {
               {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
             </button>
             <button onClick={() => setSettingsModalOpen(true)} className="p-2 rounded-full hover:bg-on-background/10 transition-colors"><CogIcon /></button>
-            <button onClick={() => setNewNoteModalOpen(true)} className="p-2 rounded-full bg-primary text-on-primary hover:bg-primary-variant transition-colors"><PlusIcon /></button>
           </div>
         </div>
       </header>
@@ -451,6 +450,14 @@ const App: React.FC = () => {
             </section>
         )}
       </main>
+
+      <button
+        onClick={() => setNewNoteModalOpen(true)}
+        className="fixed bottom-6 right-6 z-20 p-4 rounded-full bg-primary text-on-primary shadow-lg hover:bg-primary-variant transition-transform transform hover:scale-110"
+        aria-label="Neue Notiz erstellen"
+      >
+        <PlusIcon className="h-8 w-8" />
+      </button>
 
       <SettingsModal 
         isOpen={isSettingsModalOpen}

@@ -26,8 +26,14 @@ const NewNoteTypeModal: React.FC<NewNoteTypeModalProps> = ({ isOpen, onClose, on
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-surface rounded-lg shadow-xl w-full max-w-lg p-6 relative">
+    <div 
+      className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-4 pt-20"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-surface rounded-t-lg sm:rounded-lg shadow-xl w-full max-w-lg p-6 relative animate-slide-in-up"
+        onClick={e => e.stopPropagation()}
+      >
         <button onClick={onClose} className="absolute top-4 right-4 text-on-surface/70 hover:text-on-surface">
           <CloseIcon />
         </button>
@@ -35,13 +41,15 @@ const NewNoteTypeModal: React.FC<NewNoteTypeModalProps> = ({ isOpen, onClose, on
         
         <div className="space-y-4">
           {noteTypeOptions.map(opt => (
-            <div key={opt.type} className="bg-background/50 p-4 rounded-lg flex items-center gap-4">
-              <div className="flex-shrink-0">{opt.icon}</div>
-              <div className="flex-grow">
-                <h3 className="font-bold text-on-surface">{opt.label}</h3>
-                <p className="text-sm text-on-background/70">{opt.description}</p>
+            <div key={opt.type} className="bg-background/50 p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex items-center gap-4 w-full">
+                <div className="flex-shrink-0">{opt.icon}</div>
+                <div className="flex-grow">
+                  <h3 className="font-bold text-on-surface">{opt.label}</h3>
+                  <p className="text-sm text-on-background/70">{opt.description}</p>
+                </div>
               </div>
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-row sm:flex-col justify-end w-full sm:w-auto gap-2 flex-shrink-0 mt-2 sm:mt-0">
                  <button onClick={() => handleCreate(opt.type, 'local')} className="px-3 py-1.5 rounded-md bg-on-background/20 text-on-surface text-sm font-semibold hover:bg-on-background/30 transition-colors whitespace-nowrap">
                     Lokal erstellen
                  </button>

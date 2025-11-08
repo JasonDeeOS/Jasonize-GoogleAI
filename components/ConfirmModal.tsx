@@ -14,8 +14,14 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({ isOpen, onClose, onConfirm,
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-surface rounded-lg shadow-xl w-full max-w-md p-6 relative">
+    <div 
+      className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-4 pt-20"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-surface rounded-t-lg sm:rounded-lg shadow-xl w-full max-w-md p-6 relative animate-slide-in-up"
+        onClick={e => e.stopPropagation()}
+      >
         <button onClick={onClose} className="absolute top-4 right-4 text-on-surface/70 hover:text-on-surface">
           <CloseIcon />
         </button>
