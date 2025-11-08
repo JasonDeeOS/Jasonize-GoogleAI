@@ -115,7 +115,7 @@ Dieses Projekt ist für ein nahtloses Deployment auf [Vercel](https://vercel.com
 2.  **Projekt in Vercel importieren:**
     *   Importieren Sie Ihr Git-Repository in Vercel.
     *   Wählen Sie als **"Framework Preset"** die Option **"Vite"**.
-    *   Vercel erkennt das Projekt automatisch und füllt alle Build-Einstellungen korrekt aus. Es sind keine weiteren manuellen Anpassungen notwendig.
+    *   Vercel erkennt das Projekt automatisch und füllt alle Build-Einstellungen korrekt aus. Es sind keine weiteren manuellen Anpassungen notwendig. Die `vercel.json`-Datei ist nicht erforderlich.
 3.  **Deploy:** Klicken Sie auf "Deploy". Vercel führt `npm run build` aus, findet den Output im `dist`-Ordner und stellt die optimierte Anwendung bereit.
 
 ### 7. Technischer Stack
@@ -131,14 +131,11 @@ Dieses Projekt ist für ein nahtloses Deployment auf [Vercel](https://vercel.com
 ### 8. Entwicklungsverlauf (Changelog)
 
 *   **v4.1.0 (Deployment-Ready):**
-    *   **Korrigiert:** `index.html` wurde auf die saubere Vite-Vorlage umgestellt.
-    *   **Korrigiert:** UI-Bug mit schlechtem Farbkontrast bei sekundären Buttons im Dark Mode behoben.
-    *   **Bereinigt:** Redundante `importmap` aus `index.sandbox.html` entfernt.
-    *   **Bereinigt:** Unnötige `vercel.json`-Datei entfernt.
+    *   **Korrigiert:** `index.html` wurde auf die saubere Vite-Vorlage umgestellt, um Inkompatibilität mit dem Build-Prozess zu beheben.
+    *   **Entfernt:** Die fehlerhafte und unnötige `vercel.json`-Datei wurde entfernt, um den `Invalid JSON`-Fehler beim Deployment zu beheben.
 *   **v4.0.2 (Prozess-Update):**
     *   **Geändert:** Der KI-Workflow wurde um einen expliziten Bestätigungsschritt ("go") erweitert, um Änderungen vor der Implementierung zu validieren.
 *   **v4.0.1 (Hybrider Workflow):**
-    *   **Korrigiert:** `index.html` wurde durch eine saubere Vite-Vorlage ersetzt, um das Deployment zu ermöglichen.
     *   **Hinzugefügt:** `index.sandbox.html` für eine funktionierende Vorschau in der AI Studio Sandbox.
     *   **Angepasst:** Alle lokalen Import-Anweisungen enthalten nun explizite Dateiendungen (`.tsx`, `.ts`), um die Kompatibilität mit der Sandbox zu gewährleisten.
 *   **v4.0.0 (Major Refactoring):**
