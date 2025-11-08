@@ -130,6 +130,8 @@ Dieses Projekt ist für ein nahtloses Deployment auf [Vercel](https://vercel.com
 
 ### 8. Entwicklungsverlauf (Changelog)
 
+*   **v4.1.6 (Finaler Deployment-Fix):**
+    *   **Korrigiert:** `index.html` wurde endgültig auf die saubere Vite-Vorlage umgestellt, um den Build-Fehler auf Vercel zu beheben, der durch eine inkompatible `importmap` verursacht wurde.
 *   **v4.1.5 (Finaler Deployment-Fix):**
     *   **Korrigiert:** `index.html` wurde endgültig auf die saubere Vite-Vorlage umgestellt, um den Build-Fehler auf Vercel zu beheben.
     *   **Korrigiert:** Der fehlende CSS-Import in `src/index.tsx` wurde hinzugefügt, um sicherzustellen, dass Stile im Produktions-Build geladen werden.
