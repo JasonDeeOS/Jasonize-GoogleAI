@@ -56,15 +56,15 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
         newItem.notes = '';
         newItem.category = '';
     }
-    setContent(c => [...(c as ListItem[]), newItem]);
+    setContent(c => [...(Array.isArray(c) ? c : []), newItem]);
   };
   
   const updateListItem = (id: string, newValues: Partial<ListItem>) => {
-    setContent(c => (c as ListItem[]).map(item => item.id === id ? { ...item, ...newValues } : item));
+    setContent(c => (Array.isArray(c) ? c : []).map(item => item.id === id ? { ...item, ...newValues } : item));
   };
   
   const removeListItem = (id: string) => {
-    setContent(c => (c as ListItem[]).filter(item => item.id !== id));
+    setContent(c => (Array.isArray(c) ? c : []).filter(item => item.id !== id));
   };
 
   const renderContentEditor = () => {
@@ -80,9 +80,10 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
         );
       case NoteType.List:
       case NoteType.ShoppingList:
+        const listContent = Array.isArray(content) ? content : [];
         return (
             <div>
-                {(content as ListItem[]).map((item, index) => (
+                {listContent.map((item, index) => (
                     <div key={item.id} className="flex items-start gap-2 mb-3 p-2 border border-on-background/10 rounded-md">
                         <input type="checkbox" checked={item.completed} onChange={e => updateListItem(item.id, { completed: e.target.checked })} className="mt-2 h-5 w-5 rounded text-primary bg-surface border-on-background/30 focus:ring-primary cursor-pointer" />
                         <div className="flex-grow space-y-1">

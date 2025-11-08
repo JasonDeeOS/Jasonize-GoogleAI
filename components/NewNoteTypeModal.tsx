@@ -48,7 +48,7 @@ const NewNoteTypeModal: React.FC<NewNoteTypeModalProps> = ({ isOpen, onClose, on
                  <button 
                     onClick={() => handleCreate(opt.type, 'cloud')}
                     disabled={!isCloudConfigured}
-                    className="px-3 py-1.5 rounded-md bg-secondary/80 text-on-secondary text-sm font-semibold hover:bg-secondary transition-colors disabled:bg-on-background/10 disabled:text-on-background/50 disabled:cursor-not-allowed whitespace-nowrap"
+                    className="px-3 py-1.5 rounded-md bg-secondary text-on-secondary text-sm font-semibold hover:bg-secondary-variant transition-colors disabled:bg-on-background/10 disabled:text-on-background/50 disabled:cursor-not-allowed whitespace-nowrap"
                     title={!isCloudConfigured ? 'Cloud-Speicher ist nicht konfiguriert.' : 'In der Cloud speichern'}
                  >
                     Cloud erstellen

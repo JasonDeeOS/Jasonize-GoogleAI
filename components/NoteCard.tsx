@@ -1,19 +1,33 @@
 import React from 'react';
 import { Note, ListItem, NoteType } from '../types';
 import TrashIcon from './icons/TrashIcon';
+import RestoreIcon from './icons/RestoreIcon';
 
 interface NoteCardProps {
   note: Note;
   onView: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
+  onRestore?: () => void;
+  onPermanentDelete?: () => void;
   isDeleting?: boolean;
   isUpdated?: boolean;
+  view: 'active' | 'deleted';
 }
 
-const NoteCard: React.FC<NoteCardProps> = ({ note, onView, onDelete, isDeleting, isUpdated }) => {
+const NoteCard: React.FC<NoteCardProps> = ({ note, onView, onDelete, onRestore, onPermanentDelete, isDeleting, isUpdated, view }) => {
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onDelete();
+    onDelete?.();
+  };
+
+  const handleRestore = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onRestore?.();
+  };
+  
+  const handlePermanentDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onPermanentDelete?.();
   };
 
   const formatDate = (dateString: string) => {
@@ -46,17 +60,18 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onView, onDelete, isDeleting,
   }
 
   const cardClasses = [
-    'group', 'relative', 'bg-surface', 'p-4', 'rounded-lg', 'shadow-lg', 'cursor-pointer', 
-    'transition-all', 'duration-300', 'hover:shadow-primary/30', 'hover:-translate-y-1', 
+    'group', 'relative', 'bg-surface', 'p-4', 'rounded-lg', 'shadow-lg', 
+    'transition-all', 'duration-300', 
     'flex', 'flex-col', 'justify-between', 'min-h-[130px]',
     'animate-scale-in',
     isDeleting ? 'opacity-0 scale-95' : '',
     isUpdated ? 'animate-highlight-pulse' : '',
+    view === 'active' ? 'cursor-pointer hover:shadow-primary/30 hover:-translate-y-1' : 'opacity-60',
   ].join(' ');
 
   return (
     <div
-      onClick={onView}
+      onClick={view === 'active' ? onView : undefined}
       className={cardClasses}
     >
       <div>
@@ -66,15 +81,39 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onView, onDelete, isDeleting,
         </div>
       </div>
       <p className="text-sm text-on-background/70 mt-auto">
-        Erstellt: {formatDate(note.createdAt)}
+        {view === 'deleted' && note.deletedAt ? `Gelöscht: ${formatDate(note.deletedAt)}` : `Erstellt: ${formatDate(note.createdAt)}`}
       </p>
-      <button
-        onClick={handleDelete}
-        className="absolute top-3 right-3 p-1 rounded-full bg-surface text-on-surface/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-danger hover:text-white"
-        aria-label="Notiz löschen"
-      >
-        <TrashIcon />
-      </button>
+
+      {view === 'active' && (
+        <button
+          onClick={handleDelete}
+          className="absolute top-3 right-3 p-1 rounded-full bg-surface text-on-surface/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-danger hover:text-white"
+          aria-label="Notiz löschen"
+        >
+          <TrashIcon />
+        </button>
+      )}
+
+      {view === 'deleted' && (
+        <div className="absolute top-3 right-3 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+           <button
+            onClick={handleRestore}
+            className="p-1 rounded-full bg-surface text-on-surface/60 hover:bg-secondary hover:text-white"
+            aria-label="Notiz wiederherstellen"
+            title="Wiederherstellen"
+          >
+            <RestoreIcon />
+          </button>
+          <button
+            onClick={handlePermanentDelete}
+            className="p-1 rounded-full bg-surface text-on-surface/60 hover:bg-danger hover:text-white"
+            aria-label="Notiz endgültig löschen"
+            title="Endgültig löschen"
+          >
+            <TrashIcon />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

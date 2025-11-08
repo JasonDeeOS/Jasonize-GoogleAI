@@ -21,6 +21,7 @@ export interface Note {
   content: string | ListItem[];
   createdAt: string;
   updatedAt: string;
+  deletedAt?: string | null;
 }
 
 export interface GithubGistSettings {

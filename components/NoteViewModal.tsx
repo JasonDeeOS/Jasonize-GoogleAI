@@ -3,6 +3,7 @@ import { Note, NoteType, ListItem } from '../types';
 import CloseIcon from './icons/CloseIcon';
 import EditIcon from './icons/EditIcon';
 import TrashIcon from './icons/TrashIcon';
+import CloudUploadIcon from './icons/CloudUploadIcon';
 
 interface NoteViewModalProps {
   isOpen: boolean;
@@ -11,9 +12,11 @@ interface NoteViewModalProps {
   onDelete: () => void;
   note: Note | null;
   onUpdateNote: (updatedNote: Note) => void;
+  onMoveToCloud?: () => void;
+  location?: 'local' | 'cloud' | null;
 }
 
-const NoteViewModal: React.FC<NoteViewModalProps> = ({ isOpen, onClose, onEdit, onDelete, note, onUpdateNote }) => {
+const NoteViewModal: React.FC<NoteViewModalProps> = ({ isOpen, onClose, onEdit, onDelete, note, onUpdateNote, onMoveToCloud, location }) => {
   if (!isOpen || !note) return null;
 
   const handleDelete = () => {
@@ -87,6 +90,11 @@ const NoteViewModal: React.FC<NoteViewModalProps> = ({ isOpen, onClose, onEdit, 
         <header className="p-4 border-b border-on-background/20 flex justify-between items-center flex-shrink-0">
           <h2 className="text-2xl font-bold text-on-surface truncate pr-4">{note.title}</h2>
           <div className="flex items-center space-x-2">
+             {location === 'local' && (
+                <button onClick={onMoveToCloud} className="p-2 rounded-full hover:bg-on-background/20 transition-colors" aria-label="In die Cloud verschieben" title="In die Cloud verschieben">
+                    <CloudUploadIcon />
+                </button>
+             )}
              <button onClick={onEdit} className="p-2 rounded-full hover:bg-on-background/20 transition-colors" aria-label="Bearbeiten"><EditIcon /></button>
              <button onClick={handleDelete} className="p-2 rounded-full hover:bg-danger/20 text-danger transition-colors" aria-label="Löschen"><TrashIcon className="w-5 h-5"/></button>
              <button onClick={onClose} className="p-2 rounded-full hover:bg-on-background/20 transition-colors" aria-label="Schließen"><CloseIcon /></button>

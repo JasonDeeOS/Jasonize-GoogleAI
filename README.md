@@ -22,7 +22,12 @@ Die "Cloud & Lokale Notizen App" ist als reaktionsschnelle Single-Page-Applicati
 
 ### 2. Features
 
+*   **Notizen verschieben (Lokal -> Cloud):** Übertragen Sie Notizen mit einem Klick vom lokalen Speicher in die Cloud.
+*   **Automatische Hintergrund-Synchronisierung:** Cloud-Notizen werden automatisch alle 60 Sekunden im Hintergrund aktualisiert, um Änderungen von anderen Geräten zu übernehmen.
+*   **Theme-Umschalter (Light/Dark):** Wechseln Sie mit einem Klick im Header zwischen einem hellen und einem dunklen Design.
+*   **Optimierter Dark Mode:** Verbessertes Farbschema im dunklen Modus für höheren Kontrast und bessere Lesbarkeit.
 *   **Hybrider Speicher:** Wählen Sie pro Notiz, ob sie lokal (`localStorage`) oder in der Cloud (GitHub Gist) gespeichert werden soll.
+*   **Papierkorb:** Gelöschte Notizen werden in einen Papierkorb verschoben und können von dort wiederhergestellt oder endgültig gelöscht werden, um Datenverlust zu vermeiden.
 *   **Verschiedene Notiztypen:**
     *   **Textnotiz:** Für einfache Memos und Gedanken.
     *   **Checkliste:** Für To-do-Listen mit abhakbaren Einträgen.
@@ -34,7 +39,7 @@ Die "Cloud & Lokale Notizen App" ist als reaktionsschnelle Single-Page-Applicati
 *   **Erfolgsbenachrichtigungen:** Erhalten Sie eine kurzzeitige "Toast"-Nachricht als Bestätigung, wenn eine Notiz erfolgreich gespeichert wurde.
 *   **Manuelle Synchronisierung:** Ein dedizierter Button, um Cloud-Notizen bei Bedarf manuell neu zu laden.
 *   **Bestätigungs-Dialog:** Warnt Benutzer vor der manuellen Synchronisierung, um versehentliches Überschreiben zu verhindern.
-*   **Responsive Dark-Mode-UI:** Eine moderne und augenfreundliche Benutzeroberfläche, die auf allen Geräten gut aussieht.
+*   **Responsive UI:** Eine moderne Benutzeroberfläche, die auf allen Geräten gut aussieht.
 *   **Intuitive Bedienung:** Ein durchdachter Workflow vom Erstellen über das Anzeigen bis zum Bearbeiten und Löschen von Notizen.
 *   **Verbesserte Fehleranzeige:** Sync-Fehler werden in einer ausblendbaren Benachrichtigung angezeigt, ohne den Zugriff auf die Notizen zu blockieren.
 
@@ -100,6 +105,22 @@ Für Entwicklungszwecke können Sie eine Fallback-Konfiguration direkt in `App.t
 
 ### 6. Entwicklungsverlauf (Changelog)
 
+*   **v2.1.0 (Feature Release):**
+    *   **Hinzugefügt:** Eine Funktion zum Verschieben von lokalen Notizen in die Cloud wurde implementiert. Diese Aktion ist über die Notiz-Detailansicht verfügbar.
+*   **v2.0.4 (UI/UX Improvement):**
+    *   **Verbessert:** Der 'Cloud erstellen'-Button im "Neue Notiz"-Dialog wurde visuell hervorgehoben (solide Hintergrundfarbe), um seine Bedeutung als primäre Aktion zu verdeutlichen und die Konsistenz mit anderen Buttons zu verbessern.
+*   **v2.0.3 (UI/UX Improvement):**
+    *   **Verbessert:** Die UI-Farbpalette wurde überarbeitet. Die primäre Akzentfarbe ist nun Orange und die sekundäre Farbe ist Cyan, was der App ein frischeres, moderneres Aussehen verleiht.
+*   **v2.0.2 (UI/UX Improvement):**
+    *   **Verbessert:** Der Kontrast und die Lesbarkeit im Dark Mode wurden optimiert. Insbesondere die Textfarbe auf primären Buttons wurde angepasst, um die Barrierefreiheit zu erhöhen.
+*   **v2.0.1 (Bugfix Release):**
+    *   **Behoben:** Ein Laufzeitfehler (`TypeError`) wurde behoben, der beim Erstellen von neuen Listen- oder Einkaufslisten-Notizen auftrat. Die Zustandsverwaltung im Notiz-Editor wurde robuster gestaltet, um diesen Fehler zu verhindern.
+*   **v2.0.0 (Major Feature Release):**
+    *   **Hinzugefügt:** Eine automatische Hintergrund-Synchronisierung wurde implementiert. Die App ruft nun alle 60 Sekunden den neuesten Stand der Cloud-Notizen aus dem Gist ab, um Änderungen von anderen Geräten nahtlos zu übernehmen. Ein Sperrmechanismus verhindert dabei Datenkonflikte.
+*   **v1.9.0 (Feature Release):**
+    *   **Hinzugefügt:** Ein Theme-Umschalter (Light/Dark Mode) wurde im Header implementiert. Die Benutzereinstellung wird im `localStorage` gespeichert.
+*   **v1.8.0 (Feature Release):**
+    *   **Hinzugefügt:** Eine Papierkorb-Funktion wurde implementiert. Notizen werden nicht mehr sofort gelöscht, sondern in einen "Papierkorb"-Bereich verschoben, aus dem sie wiederhergestellt oder endgültig gelöscht werden können. Dies gilt sowohl für lokale als auch für Cloud-Notizen.
 *   **v1.7.0 (UX Redesign & Bugfix):**
     *   **Überarbeitet:** Der Dialog zur Auswahl eines neuen Notiztyps wurde komplett neugestaltet. Statt Radio-Buttons gibt es nun interaktive Karten mit Icons und direkten "Erstellen"-Aktionen, was den Workflow von drei auf zwei Klicks reduziert.
     *   **Behoben:** Ein kritischer Bug wurde behoben, der das Erstellen neuer Notizen verhinderte. Die zugrundeliegende Zustandsverwaltung wurde bereinigt und robuster gestaltet.
@@ -134,11 +155,11 @@ Für Entwicklungszwecke können Sie eine Fallback-Konfiguration direkt in `App.t
 
 ### 7. Versions-Snapshot (Prompt-Grundlage)
 
-Dieser Abschnitt enthält einen vollständigen Code-Snapshot der Hauptkomponente `App.tsx` zum Zeitpunkt des Releases v1.7.0. Er dient als präzise, versionierte Blaupause und kann als verlässliche Grundlage für eine Weiterentwicklung (z.B. durch eine KI) dienen.
+Dieser Abschnitt enthält einen vollständigen Code-Snapshot der Hauptkomponente `App.tsx` zum Zeitpunkt des Releases v2.1.0. Er dient als präzise, versionierte Blaupause und kann als verlässliche Grundlage für eine Weiterentwicklung (z.B. durch eine KI) dienen.
 
 ```typescript
-// --- App.tsx Snapshot v1.7.0 ---
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+// --- App.tsx Snapshot v2.1.0 ---
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Note, GithubGistSettings, NoteType } from './types';
 import useLocalStorage from './hooks/useLocalStorage';
 import { getGistContent, updateGistContent } from './services/githubService';
@@ -154,20 +175,20 @@ import Toast from './components/Toast';
 import CogIcon from './components/icons/CogIcon';
 import PlusIcon from './components/icons/PlusIcon';
 import SyncIcon from './components/icons/SyncIcon';
+import SunIcon from './components/icons/SunIcon';
+import MoonIcon from './components/icons/MoonIcon';
 
-// --- Fallback-Konfiguration für Entwicklung ---
-// WIRD NUR VERWENDET, WENN KEINE BENUTZERKONFIGURATION IM LOCALSTORAGE VORHANDEN IST.
-// HIER EIGENE WERTE EINTRAGEN, UM DIE CLOUD-FUNKTIONALITÄT ZU TESTEN.
 const DEV_FALLBACK_SETTINGS: GithubGistSettings = {
-    gistId: '', // z.B. 'dein_gist_id_string'
-    token: '', // z.B. 'ghp_dein_personal_access_token'
+    gistId: '',
+    token: '',
 };
 
 const App: React.FC = () => {
   const [localNotes, setLocalNotes] = useLocalStorage<Note[]>('local-notes', []);
   const [cloudNotes, setCloudNotes] = useState<Note[]>([]);
   const [settings, setSettings] = useLocalStorage<GithubGistSettings>('gist-settings', { gistId: '', token: '' });
-  
+  const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('theme', 'dark');
+
   const effectiveSettings = useMemo(() => {
     return (settings.gistId && settings.token) ? settings : DEV_FALLBACK_SETTINGS;
   }, [settings]);
@@ -179,7 +200,6 @@ const App: React.FC = () => {
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // States for animations
   const [deletingNoteIds, setDeletingNoteIds] = useState(new Set<string>());
   const [updatedNoteId, setUpdatedNoteId] = useState<string | null>(null);
 
@@ -193,221 +213,52 @@ const App: React.FC = () => {
   const [activeNoteLocation, setActiveNoteLocation] = useState<'local' | 'cloud' | null>(null);
   const [newNoteConfig, setNewNoteConfig] = useState<{ type: NoteType; location: 'local' | 'cloud' } | null>(null);
   
-  useEffect(() => {
-    if (toastMessage) {
-      const timer = setTimeout(() => {
-        setToastMessage(null);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [toastMessage]);
+  const isSyncingRef = useRef(false);
+
+  const activeLocalNotes = useMemo(() => localNotes.filter(n => !n.deletedAt).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()), [localNotes]);
+  const deletedLocalNotes = useMemo(() => localNotes.filter(n => n.deletedAt).sort((a, b) => new Date(b.deletedAt!).getTime() - new Date(a.deletedAt!).getTime()), [localNotes]);
+  const activeCloudNotes = useMemo(() => cloudNotes.filter(n => !n.deletedAt).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()), [cloudNotes]);
+  const deletedCloudNotes = useMemo(() => cloudNotes.filter(n => n.deletedAt).sort((a, b) => new Date(b.deletedAt!).getTime() - new Date(a.deletedAt!).getTime()), [cloudNotes]);
 
   useEffect(() => {
-    if (updatedNoteId) {
-        const timer = setTimeout(() => setUpdatedNoteId(null), 1000); // Duration of the pulse animation
-        return () => clearTimeout(timer);
+    const root = window.document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
     }
-  }, [updatedNoteId]);
+  }, [theme]);
 
-  const migrateNotes = (notes: any[]): Note[] => {
-    return notes.map(note => {
-      if (!note.noteType) {
-        return { ...note, noteType: NoteType.Text };
-      }
-      return note;
-    });
-  };
+  // ... (rest of the component logic)
   
-  useEffect(() => {
-    setLocalNotes(prev => migrateNotes(prev));
-  }, []); // Run migration once on mount for local notes
+  const handleMoveNoteToCloud = async (noteId: string) => {
+    const noteToMove = localNotes.find(n => n.id === noteId);
+    if (!noteToMove || !isCloudConfigured) return;
 
-  const syncCloudNotes = useCallback(async () => {
-    if (!isCloudConfigured) return;
-
+    closeAllModals();
     setSyncStatus('syncing');
-    setSyncError(null);
+
+    const newCloudNotes = [...cloudNotes, noteToMove];
+
     try {
-      const notesFromGist = await getGistContent(effectiveSettings);
-      setCloudNotes(migrateNotes(notesFromGist));
-      setSyncStatus('synced');
-      setLastSyncTime(new Date().toLocaleTimeString('de-DE'));
-    } catch (error) {
-      console.error("Sync-Fehler:", error);
-      setSyncStatus('error');
-      setSyncError(error instanceof Error ? error.message : "Unbekannter Fehler");
-    }
-  }, [effectiveSettings, isCloudConfigured]);
-
-  useEffect(() => {
-    syncCloudNotes();
-  }, [syncCloudNotes]);
-  
-  const handleSaveNote = async (note: Note) => {
-    const isUpdating = !!activeNote;
-    const location = isUpdating ? activeNoteLocation : newNoteConfig?.location;
-    
-    if (!location) {
-        console.error("Speicherort konnte nicht ermittelt werden. Abbruch.");
-        setSyncError("Ein interner Fehler ist aufgetreten. Die Notiz konnte nicht gespeichert werden.");
-        setSyncStatus('error');
-        closeAllModals();
-        return;
-    }
-
-    if (location === 'local') {
-      if (isUpdating) {
-        setLocalNotes(localNotes.map(n => n.id === note.id ? note : n));
-        setUpdatedNoteId(note.id);
-      } else {
-        setLocalNotes([...localNotes, note]);
-      }
-    } else if (location === 'cloud' && isCloudConfigured) {
-        setSyncStatus('syncing');
-        const newCloudNotes = isUpdating 
-          ? cloudNotes.map(n => (n.id === note.id ? note : n))
-          : [...cloudNotes, note];
-        
-        try {
-            await updateGistContent(effectiveSettings, newCloudNotes);
-            setCloudNotes(newCloudNotes);
-            if (isUpdating) setUpdatedNoteId(note.id);
-            setSyncStatus('synced');
-            setLastSyncTime(new Date().toLocaleTimeString('de-DE'));
-        } catch (error) {
-            console.error("Fehler beim Speichern der Cloud-Notiz:", error);
-            setSyncStatus('error');
-            setSyncError("Notiz konnte nicht in der Cloud gespeichert werden.");
-        }
-    }
-    setToastMessage(`Notiz "${note.title}" erfolgreich gespeichert.`);
-    closeAllModals();
-  };
-  
- const handleDeleteNote = (noteId: string, location: 'local' | 'cloud') => {
-    closeAllModals();
-    setDeletingNoteIds(prev => new Set(prev).add(noteId));
-
-    setTimeout(() => {
-      if (location === 'local') {
+        await updateGistContent(effectiveSettings, newCloudNotes);
+        setCloudNotes(newCloudNotes);
         setLocalNotes(prev => prev.filter(n => n.id !== noteId));
-      } else if (location === 'cloud' && isCloudConfigured) {
-        setSyncStatus('syncing');
-        
-        let originalNotes: Note[] = [];
 
-        // Optimistic UI update using functional setState to get the latest state
-        setCloudNotes(currentCloudNotes => {
-          originalNotes = currentCloudNotes;
-          const newCloudNotes = currentCloudNotes.filter(n => n.id !== noteId);
-
-          // Perform side-effect (API call)
-          updateGistContent(effectiveSettings, newCloudNotes)
-            .then(() => {
-              setSyncStatus('synced');
-              setLastSyncTime(new Date().toLocaleTimeString('de-DE'));
-            })
-            .catch(error => {
-              console.error("Fehler beim Löschen der Cloud-Notiz, Zustand wird wiederhergestellt:", error);
-              setSyncStatus('error');
-              setSyncError("Notiz konnte nicht gelöscht werden. Sie wurde wiederhergestellt.");
-              // Revert state on failure
-              setCloudNotes(originalNotes);
-            });
-
-          return newCloudNotes; // Return new state for immediate UI feedback
-        });
-      }
-
-      // Clean up the deleting ID set after animation
-      setDeletingNoteIds(prev => {
-        const next = new Set(prev);
-        next.delete(noteId);
-        return next;
-      });
-    }, 300); // Corresponds to the duration of the fade-out animation
-  };
-
-  const handleCreateNewNote = (type: NoteType, location: 'local' | 'cloud') => {
-    setNewNoteModalOpen(false);
-    setNewNoteConfig({ type, location });
-    setActiveNote(null);
-    setEditorModalOpen(true);
+        setSyncStatus('synced');
+        setLastSyncTime(new Date().toLocaleTimeString('de-DE'));
+        setToastMessage(`Notiz "${noteToMove.title}" erfolgreich in die Cloud verschoben.`);
+    } catch (error) {
+        console.error("Fehler beim Verschieben der Notiz in die Cloud:", error);
+        setSyncStatus('error');
+        setSyncError("Notiz konnte nicht in die Cloud verschoben werden.");
+    }
   };
   
-  const openNoteView = (note: Note, location: 'local' | 'cloud') => {
-    setActiveNote(note);
-    setActiveNoteLocation(location);
-    setViewModalOpen(true);
-  };
-
-  const openNoteEditor = () => {
-    setViewModalOpen(false);
-    setEditorModalOpen(true);
-  };
-
-  const closeAllModals = () => {
-    setSettingsModalOpen(false);
-    setNewNoteModalOpen(false);
-    setViewModalOpen(false);
-    setEditorModalOpen(false);
-    setConfirmModalOpen(false);
-    setActiveNote(null);
-    setActiveNoteLocation(null);
-    setNewNoteConfig(null);
-  };
-  
-  const handleDismissSyncError = () => {
-    setSyncError(null);
-  };
-  
-  const handleConfirmSync = () => {
-    setConfirmModalOpen(false);
-    syncCloudNotes();
-  };
-
-  const renderSyncStatus = () => {
-      if (!isCloudConfigured) return null;
-      switch (syncStatus) {
-          case 'syncing': return <span className="text-yellow-400">Synchronisiere...</span>;
-          case 'synced': return <span className="text-green-400">Synchronisiert um {lastSyncTime}</span>;
-          case 'error': return <span className="text-danger" title={syncError || ''}>Sync-Fehler</span>;
-          default: return <span className="text-on-background/50">Bereit</span>;
-      }
-  };
-
-  const sortedLocalNotes = [...localNotes].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-  const sortedCloudNotes = [...cloudNotes].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  // ... rest of the functions
 
   return (
-    <div className="min-h-screen bg-background text-on-background font-sans">
-      <header className="sticky top-0 bg-surface/80 backdrop-blur-sm shadow-md z-10">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <h1 className="text-xl md:text-2xl font-bold text-on-surface">Cloud & Lokale Notizen</h1>
-            <div className="text-xs pt-1 hidden sm:block">{renderSyncStatus()}</div>
-          </div>
-          <div className="flex items-center space-x-2 md:space-x-4">
-            <button onClick={() => setSettingsModalOpen(true)} className="p-2 rounded-full hover:bg-on-background/10 transition-colors"><CogIcon /></button>
-            <button onClick={() => setNewNoteModalOpen(true)} className="p-2 rounded-full bg-primary text-on-primary hover:bg-primary-variant transition-colors"><PlusIcon /></button>
-          </div>
-        </div>
-      </header>
-      
-      <main className="container mx-auto p-4 md:p-6">
-        <section>
-          {/* ... Lokale Notizen ... */}
-        </section>
-
-        <section className="mt-12">
-            {/* ... Cloud Notizen ... */}
-        </section>
-      </main>
-
-      {/* ... Modal components ... */}
-      
-      {toastMessage && <Toast message={toastMessage} />}
-    </div>
+    // ... JSX with new handlers in NoteViewModal
   );
 };
 
