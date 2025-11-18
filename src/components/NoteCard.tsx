@@ -1,12 +1,12 @@
 import React from 'react';
-import { Note, ListItem, NoteType } from '../types.ts';
-import TrashIcon from './icons/TrashIcon.tsx';
-import RestoreIcon from './icons/RestoreIcon.tsx';
-import CloudOffIcon from './icons/CloudOffIcon.tsx';
+import { Note, ListItem, NoteType } from '../types';
+import CloudOffIcon from './icons/CloudOffIcon';
+import TrashIcon from './icons/TrashIcon';
+import RestoreIcon from './icons/RestoreIcon';
 
 interface NoteCardProps {
   note: Note;
-  onView: () => void;
+  onView?: () => void;
   onDelete?: () => void;
   onRestore?: () => void;
   onPermanentDelete?: () => void;
@@ -26,7 +26,7 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onView, onDelete, onRestore, 
     e.stopPropagation();
     onRestore?.();
   };
-  
+
   const handlePermanentDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     onPermanentDelete?.();
@@ -62,8 +62,8 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onView, onDelete, onRestore, 
   }
 
   const cardClasses = [
-    'group', 'relative', 'bg-surface', 'p-4', 'rounded-lg', 'shadow-lg', 
-    'transition-all', 'duration-300', 
+    'group', 'relative', 'bg-surface', 'p-4', 'rounded-lg', 'shadow-lg',
+    'transition-all', 'duration-300',
     'flex', 'flex-col', 'justify-between', 'min-h-[130px]',
     'animate-scale-in',
     isDeleting ? 'opacity-0 scale-95' : '',
@@ -79,7 +79,7 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onView, onDelete, onRestore, 
       <div>
         <h3 className="text-lg font-bold text-on-surface truncate mb-2">{note.title}</h3>
         <div className="mb-2">
-           {renderContentPreview()}
+          {renderContentPreview()}
         </div>
       </div>
       <p className="text-sm text-on-background/70 mt-auto">
@@ -104,7 +104,7 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onView, onDelete, onRestore, 
 
       {view === 'deleted' && (
         <div className="absolute top-3 right-3 flex space-x-1 opacity-70 group-hover:opacity-100 transition-opacity duration-300">
-           <button
+          <button
             onClick={handleRestore}
             className="p-1 rounded-full bg-surface text-on-surface/60 hover:bg-secondary hover:text-white"
             aria-label="Notiz wiederherstellen"

@@ -1,9 +1,9 @@
 import React from 'react';
-import { NoteType } from '../types.ts';
-import CloseIcon from './icons/CloseIcon.tsx';
-import DocumentIcon from './icons/DocumentIcon.tsx';
-import ListIcon from './icons/ListIcon.tsx';
-import ShoppingCartIcon from './icons/ShoppingCartIcon.tsx';
+import { NoteType } from '../types';
+import CloseIcon from './icons/CloseIcon';
+import DocumentIcon from './icons/DocumentIcon';
+import ListIcon from './icons/ListIcon';
+import ShoppingCartIcon from './icons/ShoppingCartIcon';
 
 interface NewNoteTypeModalProps {
   isOpen: boolean;
@@ -26,11 +26,11 @@ const NewNoteTypeModal: React.FC<NewNoteTypeModalProps> = ({ isOpen, onClose, on
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-4 pt-20"
       onClick={onClose}
     >
-      <div 
+      <div
         className="bg-surface rounded-t-lg sm:rounded-lg shadow-xl w-full max-w-lg p-6 relative animate-slide-in-up"
         onClick={e => e.stopPropagation()}
       >
@@ -38,7 +38,7 @@ const NewNoteTypeModal: React.FC<NewNoteTypeModalProps> = ({ isOpen, onClose, on
           <CloseIcon />
         </button>
         <h2 className="text-2xl font-bold mb-6 text-on-surface text-center">Welche Art von Notiz möchten Sie erstellen?</h2>
-        
+
         <div className="space-y-4">
           {noteTypeOptions.map(opt => (
             <div key={opt.type} className="bg-background/50 p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -50,16 +50,16 @@ const NewNoteTypeModal: React.FC<NewNoteTypeModalProps> = ({ isOpen, onClose, on
                 </div>
               </div>
               <div className="flex flex-row sm:flex-col justify-end w-full sm:w-auto gap-2 flex-shrink-0 mt-2 sm:mt-0">
-                 <button onClick={() => handleCreate(opt.type, 'local')} className="px-3 py-1.5 rounded-md bg-on-background/20 text-on-surface text-sm font-semibold hover:bg-on-background/30 transition-colors whitespace-nowrap">
-                    Lokal erstellen
-                 </button>
-                 <button 
-                    onClick={() => handleCreate(opt.type, 'cloud')}
-                    className="px-3 py-1.5 rounded-md bg-secondary text-on-secondary text-sm font-semibold hover:bg-secondary-variant transition-colors whitespace-nowrap"
-                    title={!isCloudConfigured ? 'Notiz wird lokal zwischengespeichert und synchronisiert, sobald die Cloud konfiguriert ist.' : 'In der Cloud speichern'}
-                 >
-                    Cloud erstellen
-                 </button>
+                <button onClick={() => handleCreate(opt.type, 'local')} className="px-3 py-1.5 rounded-md bg-on-background/20 text-on-surface text-sm font-semibold hover:bg-on-background/30 transition-colors whitespace-nowrap">
+                  Lokal erstellen
+                </button>
+                <button
+                  onClick={() => handleCreate(opt.type, 'cloud')}
+                  className="px-3 py-1.5 rounded-md bg-secondary text-on-secondary text-sm font-semibold hover:bg-secondary-variant transition-colors whitespace-nowrap"
+                  title={!isCloudConfigured ? 'Notiz wird lokal zwischengespeichert und synchronisiert, sobald die Cloud konfiguriert ist.' : 'In der Cloud speichern'}
+                >
+                  Cloud erstellen
+                </button>
               </div>
             </div>
           ))}

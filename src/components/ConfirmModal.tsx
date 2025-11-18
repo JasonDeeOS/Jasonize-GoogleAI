@@ -1,6 +1,6 @@
 import React from 'react';
-import CloseIcon from './icons/CloseIcon.tsx';
-import WarningIcon from './icons/WarningIcon.tsx';
+import CloseIcon from './icons/CloseIcon';
+import WarningIcon from './icons/WarningIcon';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -14,11 +14,11 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({ isOpen, onClose, onConfirm,
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-4 pt-20"
       onClick={onClose}
     >
-      <div 
+      <div
         className="bg-surface rounded-t-lg sm:rounded-lg shadow-xl w-full max-w-md p-6 relative animate-slide-in-up"
         onClick={e => e.stopPropagation()}
       >

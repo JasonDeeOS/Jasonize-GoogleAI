@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { GithubGistSettings } from '../types.ts';
-import CloseIcon from './icons/CloseIcon.tsx';
+import { GithubGistSettings } from '../types';
+import CloseIcon from './icons/CloseIcon';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -21,11 +21,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSave, 
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-4 pt-20"
       onClick={onClose}
     >
-      <div 
+      <div
         className="bg-surface rounded-t-lg sm:rounded-lg shadow-xl w-full max-w-md p-6 relative animate-slide-in-up"
         onClick={e => e.stopPropagation()}
       >
@@ -33,7 +33,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSave, 
           <CloseIcon />
         </button>
         <h2 className="text-2xl font-bold mb-6 text-on-surface">Cloud-Einstellungen</h2>
-        
+
         <div className="space-y-4">
           <div>
             <label htmlFor="gistId" className="block text-sm font-medium text-on-background/80 mb-1">GitHub Gist ID</label>

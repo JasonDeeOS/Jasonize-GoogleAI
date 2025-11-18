@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Note, NoteType, ListItem } from '../types.ts';
+import { Note, NoteType, ListItem } from '../types';
 
 const useShoppingHistory = (allNotes: Note[]): string[] => {
   const frequentlyBought = useMemo(() => {

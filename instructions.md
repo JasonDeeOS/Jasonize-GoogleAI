@@ -13,20 +13,6 @@ Dieses Dokument enthält die Kernanweisungen und permanenten Aufgaben für mich,
 
 ---
 
-### 2. Der Hybride Workflow (Extrem Wichtig!)
-
-Das Projekt verwendet einen hybriden Ansatz, um sowohl eine Vorschau in der AI Studio Sandbox als auch ein Deployment auf Vercel zu ermöglichen.
-
-*   **`index.html`:** Dies ist die Produktions-Vorlage für **Vercel** und den **lokalen `npm run dev` Server**. Sie ist minimal und enthält keine CDN-Skripte.
-*   **`index.sandbox.html`:** Dies ist der Einstiegspunkt für die **AI Studio Sandbox**. Sie enthält alle notwendigen CDN-Skripte (React, Babel, Tailwind), um den Code direkt im Browser auszuführen.
-
-**Workflow:**
-1.  **An die KI geben:** Um Änderungen in der Sandbox zu testen, **muss der Benutzer den Inhalt von `index.sandbox.html` als `index.html` bereitstellen.**
-2.  **Von der KI erhalten:** Die KI wird die aktualisierten Quelldateien, die aktualisierte `index.sandbox.html` und die saubere `index.html` zurückgeben.
-3.  **Wichtige Anforderung:** Damit die Sandbox funktioniert, müssen alle lokalen `import`-Anweisungen in den `.tsx` und `.ts` Dateien **explizite Dateiendungen** enthalten (z.B. `import App from './App.tsx'`). Vite kann dies verarbeiten, für die Sandbox ist es jedoch unerlässlich.
-
----
-
 ### 3. Interaktions-Workflow (Vorschlag & Bestätigung)
 
 Um sicherzustellen, dass alle Änderungen den Erwartungen des Benutzers entsprechen, wird der folgende Prozess befolgt:
@@ -45,11 +31,5 @@ Bei jeder Anfrage, die (nach Bestätigung) zu einer Code-Änderung führt, muss 
     *   Führe die angeforderte(n) Änderung(en) im Code durch.
     *   Stelle sicher, dass die neue Funktionalität die bestehende nicht beeinträchtigt.
 
-*   **[ ] 2. `README.md` aktualisieren:**
-    *   **[ ] Changelog:** Füge einen neuen, aussagekräftigen Eintrag im Abschnitt `8. Entwicklungsverlauf (Changelog)` hinzu.
-    *   **[ ] Versionierung:** Passe die Versionsnummer im Changelog logisch an.
-    *   **[ ] Features:** Aktualisiere die Liste unter `2. Features`, falls neue Funktionen hinzugefügt oder bestehende geändert wurden.
-    *   **[ ] Benutzerhandbuch:** Passe die relevanten Abschnitte (`3.`, `4.`, `5.`, `6.`) an, falls sich die Bedienung für den Endbenutzer ändert.
-
-*   **[ ] 3. Diese Datei (`instructions.md`) aktualisieren:**
+*   **[ ] 2. Diese Datei (`instructions.md`) aktualisieren:**
     *   Überprüfe, ob die Anfrage neue, allgemeingültige Regeln oder Prozesse einführt, die hier für die zukünftige Entwicklung dokumentiert werden sollten.
