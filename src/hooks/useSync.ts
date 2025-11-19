@@ -21,24 +21,74 @@ export const useSync = (
         setSyncStatus('syncing');
         setSyncError(null);
         try {
+            // 1. Fetch latest from Cloud
             const notesFromGist = await getGistContent(effectiveSettings);
+            const migratedGistNotes = migrateNotes(notesFromGist);
 
-            const localPendingNotes = cloudNotes.filter(n => n.isPendingSync);
+            // 2. Merge Strategy
+            const mergedNotesMap = new Map<string, Note>();
 
-            if (localPendingNotes.length === 0) {
-                setCloudNotes(migrateNotes(notesFromGist));
-            } else {
-                const notesFromGistMap = new Map(notesFromGist.map(n => [n.id, n]));
+            // Start with all Gist notes
+            migratedGistNotes.forEach(note => {
+                mergedNotesMap.set(note.id, note);
+            });
 
-                localPendingNotes.forEach(pendingNote => {
-                    const { isPendingSync, ...noteToSync } = pendingNote;
-                    notesFromGistMap.set(noteToSync.id, noteToSync);
+            let hasChangesToUpload = false;
+
+            // Iterate through local cloud notes to check for updates/new notes
+            cloudNotes.forEach(localNote => {
+                const remoteNote = mergedNotesMap.get(localNote.id);
+
+                if (!remoteNote) {
+                    // Note exists locally but not in Gist (New Note created locally)
+                    // We assume it's a new note and add it
+                    mergedNotesMap.set(localNote.id, localNote);
+                    hasChangesToUpload = true;
+                } else {
+                    // Note exists in both. Conflict resolution based on updatedAt.
+                    const localDate = new Date(localNote.updatedAt).getTime();
+                    const remoteDate = new Date(remoteNote.updatedAt).getTime();
+
+                    // We use a small buffer (e.g. 1000ms) to avoid ping-ponging due to clock skew
+                    // But for strict "Last Write Wins", strict comparison is usually fine.
+                    if (localDate > remoteDate) {
+                        // Local is newer, keep local
+                        mergedNotesMap.set(localNote.id, localNote);
+                        hasChangesToUpload = true;
+                    } else {
+                        // Remote is newer (or equal), keep remote
+                        // No change to upload for this note
+                    }
+                }
+            });
+
+            const mergedNotes = Array.from(mergedNotesMap.values());
+
+            // Check if we need to upload
+            // We upload if we detected local changes that are newer (hasChangesToUpload)
+            // OR if we have pending syncs that we decided to keep.
+            // Actually, hasChangesToUpload covers the "keep local" case.
+
+            if (hasChangesToUpload) {
+                // Clean up isPendingSync before uploading
+                const notesToUpload = mergedNotes.map(n => {
+                    const { isPendingSync, ...rest } = n;
+                    return rest as Note;
                 });
 
-                const notesToUpload = Array.from(notesFromGistMap.values());
-
                 await updateGistContent(effectiveSettings, notesToUpload);
+
+                // Update local state with the clean version (no isPendingSync)
                 setCloudNotes(notesToUpload);
+            } else {
+                // No changes to upload, but we might have received updates from Gist (new notes or newer versions)
+                // We update local state to match the merged result (which is effectively the Gist content + any new local notes if we had them... wait)
+                // If hasChangesToUpload is false, it means:
+                // 1. No new local notes.
+                // 2. No local notes were newer than remote.
+                // So mergedNotes is exactly remoteNotes (or remoteNotes + nothing).
+                // So we just update local to match remote.
+                setCloudNotes(mergedNotes);
             }
 
             setSyncStatus('synced');
