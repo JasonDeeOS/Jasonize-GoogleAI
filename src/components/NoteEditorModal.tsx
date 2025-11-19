@@ -35,6 +35,7 @@ const highlightMatch = (text: string, query: string) => {
 const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSave, noteToEdit, noteType, allNotes }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState<string | ListItem[]>('');
+  const [tags, setTags] = useState<string[]>([]);
 
   const frequentlyBought = useShoppingHistory(allNotes);
   const [quickAddItemText, setQuickAddItemText] = useState('');
@@ -46,9 +47,11 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
       if (noteToEdit) {
         setTitle(noteToEdit.title);
         setContent(noteToEdit.content);
+        setTags(noteToEdit.tags || []);
       } else {
         setTitle('');
         setContent(noteType === NoteType.Text ? '' : []);
+        setTags([]);
       }
       setQuickAddItemText('');
     }
@@ -151,6 +154,7 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
       title: title.trim(),
       noteType: noteToEdit?.noteType || noteType,
       content,
+      tags,
       createdAt: noteToEdit?.createdAt || now,
       updatedAt: now,
     };
@@ -317,6 +321,17 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Titel der Notiz"
               className="w-full bg-transparent text-xl font-semibold p-2 text-on-background focus:ring-0 focus:border-primary border-0 border-b-2 border-on-background/20 outline-none transition-colors"
+            />
+          </div>
+          <div>
+            <label htmlFor="noteTags" className="sr-only">Tags</label>
+            <input
+              id="noteTags"
+              type="text"
+              value={tags.join(', ')}
+              onChange={(e) => setTags(e.target.value.split(',').map(t => t.trim()).filter(t => t))}
+              placeholder="Tags (kommagetrennt)"
+              className="w-full bg-transparent text-sm p-2 text-on-background/70 focus:ring-0 focus:border-primary border-0 border-b border-on-background/10 outline-none transition-colors"
             />
           </div>
           {renderContentEditor()}

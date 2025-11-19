@@ -95,7 +95,7 @@ const NoteViewModal: React.FC<NoteViewModalProps> = ({ isOpen, onClose, onEdit, 
       >
         <header className="p-4 border-b border-on-background/20 flex justify-between items-center flex-shrink-0">
           <h2 className="text-2xl font-bold text-on-surface truncate pr-4">{note.title}</h2>
-          <div className="flex items-center space-x-0 sm:space-x-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             {location === 'local' && (
               <button onClick={onMoveToCloud} className="p-2 rounded-full hover:bg-on-background/20 transition-colors" aria-label="In die Cloud verschieben" title="In die Cloud verschieben">
                 <CloudUploadIcon />
