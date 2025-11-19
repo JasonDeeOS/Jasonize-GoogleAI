@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
 import { Note, ListItem, NoteType } from '../types';
 import CloudOffIcon from './icons/CloudOffIcon';
 import TrashIcon from './icons/TrashIcon';
@@ -44,8 +45,13 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onView, onDelete, onRestore, 
     if (note.noteType === NoteType.Text) {
       const content = note.content as string;
       if (!content) return null;
-      const preview = content.length > 100 ? content.substring(0, 100) + '...' : content;
-      return <p className="text-sm text-on-background/70 italic whitespace-pre-wrap">{preview}</p>;
+      // For preview, we might want to strip markdown or just show it rendered but truncated?
+      // Let's show rendered markdown but limit height via CSS line-clamp or similar.
+      return (
+        <div className="text-sm text-on-background/80 prose prose-sm prose-invert max-w-none line-clamp-6">
+          <ReactMarkdown>{content}</ReactMarkdown>
+        </div>
+      );
     }
 
     if (note.noteType === NoteType.List || note.noteType === NoteType.ShoppingList) {
@@ -55,7 +61,20 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onView, onDelete, onRestore, 
       }
       const completedCount = items.filter(item => item.completed).length;
       const totalCount = items.length;
-      return <p className="text-sm text-on-background/70 italic">{completedCount} / {totalCount} erledigt</p>;
+      const previewItems = items.slice(0, 3);
+
+      return (
+        <div className="space-y-1">
+          {previewItems.map(item => (
+            <div key={item.id} className="flex items-center gap-2 text-sm text-on-background/80">
+              <span className={`w-1.5 h-1.5 rounded-full ${item.completed ? 'bg-green-400' : 'bg-primary'}`}></span>
+              <span className={item.completed ? 'line-through opacity-60' : ''}>{item.text}</span>
+            </div>
+          ))}
+          {totalCount > 3 && <p className="text-xs text-on-background/50 mt-1">... +{totalCount - 3} weitere</p>}
+          <p className="text-xs text-on-background/50 mt-2 pt-2 border-t border-on-background/10">{completedCount} / {totalCount} erledigt</p>
+        </div>
+      );
     }
 
     return null;
@@ -65,9 +84,8 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onView, onDelete, onRestore, 
     'group', 'relative', 'bg-surface', 'p-4', 'rounded-lg', 'shadow-lg',
     'transition-all', 'duration-300',
     'flex', 'flex-col', 'justify-between', 'min-h-[130px]',
-    'animate-scale-in',
     isDeleting ? 'opacity-0 scale-95' : '',
-    isUpdated ? 'animate-highlight-pulse' : '',
+    isUpdated ? 'ring-2 ring-primary' : '',
     view === 'active' ? 'cursor-pointer hover:shadow-primary/30 hover:-translate-y-1' : 'opacity-60',
   ].join(' ');
 
@@ -76,18 +94,30 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onView, onDelete, onRestore, 
       onClick={view === 'active' ? onView : undefined}
       className={cardClasses}
     >
-      <div>
+      <div className="mb-4">
         <h3 className="text-lg font-bold text-on-surface truncate mb-2">{note.title}</h3>
-        <div className="mb-2">
+        <div className="mb-3">
           {renderContentPreview()}
         </div>
+
+        {note.tags && note.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {note.tags.map(tag => (
+              <span key={tag} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
-      <p className="text-sm text-on-background/70 mt-auto">
-        {view === 'deleted' && note.deletedAt ? `Gelöscht: ${formatDate(note.deletedAt)}` : `Erstellt: ${formatDate(note.createdAt)}`}
+
+      <p className="text-xs text-on-background/50 mt-auto flex justify-between items-center">
+        <span>{formatDate(note.updatedAt)}</span>
+        {location === 'cloud' && <span className="text-[10px] uppercase tracking-wider opacity-70">Cloud</span>}
       </p>
 
       {location === 'cloud' && note.isPendingSync && view === 'active' && (
-        <div className="absolute bottom-3 left-3" title="Synchronisierung ausstehend">
+        <div className="absolute bottom-3 right-3" title="Synchronisierung ausstehend">
           <CloudOffIcon className="w-4 h-4 text-on-background/50" />
         </div>
       )}
@@ -95,30 +125,30 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onView, onDelete, onRestore, 
       {view === 'active' && (
         <button
           onClick={handleDelete}
-          className="absolute top-3 right-3 p-1 rounded-full bg-surface text-on-surface/60 opacity-70 group-hover:opacity-100 transition-opacity duration-300 hover:bg-danger hover:text-white"
+          className="absolute top-3 right-3 p-1.5 rounded-full bg-surface text-on-surface/60 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 hover:bg-danger hover:text-white shadow-sm"
           aria-label="Notiz löschen"
         >
-          <TrashIcon />
+          <TrashIcon className="w-4 h-4" />
         </button>
       )}
 
       {view === 'deleted' && (
-        <div className="absolute top-3 right-3 flex space-x-1 opacity-70 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="absolute top-3 right-3 flex space-x-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
           <button
             onClick={handleRestore}
-            className="p-1 rounded-full bg-surface text-on-surface/60 hover:bg-secondary hover:text-white"
+            className="p-1.5 rounded-full bg-surface text-on-surface/60 hover:bg-secondary hover:text-white shadow-sm"
             aria-label="Notiz wiederherstellen"
             title="Wiederherstellen"
           >
-            <RestoreIcon />
+            <RestoreIcon className="w-4 h-4" />
           </button>
           <button
             onClick={handlePermanentDelete}
-            className="p-1 rounded-full bg-surface text-on-surface/60 hover:bg-danger hover:text-white"
+            className="p-1.5 rounded-full bg-surface text-on-surface/60 hover:bg-danger hover:text-white shadow-sm"
             aria-label="Notiz endgültig löschen"
             title="Endgültig löschen"
           >
-            <TrashIcon />
+            <TrashIcon className="w-4 h-4" />
           </button>
         </div>
       )}
