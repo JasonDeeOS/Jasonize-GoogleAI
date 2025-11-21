@@ -62,21 +62,25 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
       return [];
     }
     const lowerCaseValue = quickAddItemText.toLowerCase();
-
     const frequentlyBoughtSet = new Set(frequentlyBought);
 
     const scoredSuggestions = COMMON_GROCERY_ITEMS.map(item => {
       let score = 0;
       const lowerCaseName = item.name.toLowerCase();
 
-      if (lowerCaseName.startsWith(lowerCaseValue)) {
-        score += 10;
+      // Exact match or starts with
+      if (lowerCaseName === lowerCaseValue) {
+        score += 100;
+      } else if (lowerCaseName.startsWith(lowerCaseValue)) {
+        score += 50;
+      } else if (lowerCaseName.includes(` ${lowerCaseValue}`)) { // Word boundary match
+        score += 25;
       } else if (lowerCaseName.includes(lowerCaseValue)) {
-        score += 1;
+        score += 10;
       }
 
       if (frequentlyBoughtSet.has(item.name)) {
-        score += 5; // Boost score for frequently bought items
+        score += 20; // Boost score for frequently bought items
       }
 
       return { ...item, score };
@@ -86,13 +90,19 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
     frequentlyBought.forEach(name => {
       if (!scoredSuggestions.some(s => s.name === name)) {
         const lowerCaseName = name.toLowerCase();
-        let score = 5; // Base score for being in history
-        if (lowerCaseName.startsWith(lowerCaseValue)) {
-          score += 10;
+        let score = 15; // Base score for being in history
+
+        if (lowerCaseName === lowerCaseValue) {
+          score += 100;
+        } else if (lowerCaseName.startsWith(lowerCaseValue)) {
+          score += 50;
+        } else if (lowerCaseName.includes(` ${lowerCaseValue}`)) {
+          score += 25;
         } else if (lowerCaseName.includes(lowerCaseValue)) {
-          score += 1;
+          score += 10;
         }
-        if (score > 5) { // Only include if it's a match
+
+        if (score > 15) { // Only include if it's a match (score increased from base)
           scoredSuggestions.push({ name, category: 'Sonstiges', score });
         }
       }

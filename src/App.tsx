@@ -30,25 +30,19 @@ const App: React.FC = () => {
   const [settings, setSettings] = useLocalStorage<GithubGistSettings>('gist-settings', { gistId: '', token: '' });
   const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('theme', 'dark');
 
-  const effectiveSettings = useMemo(() => {
-    return (settings.gistId && settings.token) ? settings : DEV_FALLBACK_SETTINGS;
-  }, [settings]);
-
-  const isCloudConfigured = !!(effectiveSettings.gistId && effectiveSettings.token);
-
-  // Sync Ref to break circular dependency
-  const syncCloudNotesRef = useRef<() => void>(() => { });
+  const isCloudConfigured = !!(settings.gistId && settings.token);
+  const syncCloudNotesRef = useRef<() => Promise<void>>(async () => { });
   const isConfiguringRef = useRef(false);
 
   const {
     localNotes,
-    cloudNotes,
-    setCloudNotes,
     activeLocalNotes,
     deletedLocalNotes,
     activeCloudNotes,
     deletedCloudNotes,
     allNotes,
+    cloudNotes,
+    setCloudNotes,
     handleSaveNote,
     handleDeleteNote,
     handleRestoreNote,
@@ -57,6 +51,8 @@ const App: React.FC = () => {
     updatedNoteId,
     migrateNotes
   } = useNotes(isCloudConfigured, () => syncCloudNotesRef.current());
+
+  const effectiveSettings = settings.gistId && settings.token ? settings : DEV_FALLBACK_SETTINGS;
 
   const {
     syncStatus,
@@ -94,6 +90,7 @@ const App: React.FC = () => {
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [activeNoteLocation, setActiveNoteLocation] = useState<'local' | 'cloud' | null>(null);
   const [newNoteConfig, setNewNoteConfig] = useState<{ type: NoteType; location: 'local' | 'cloud' } | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; location: 'local' | 'cloud' } | null>(null);
 
   // Search & Filter States
   const [searchQuery, setSearchQuery] = useState('');
@@ -125,6 +122,7 @@ const App: React.FC = () => {
     setActiveNote(null);
     setActiveNoteLocation(null);
     setNewNoteConfig(null);
+    setPendingDelete(null);
   };
 
   const handleSaveNoteWrapper = (note: Note) => {
@@ -168,6 +166,23 @@ const App: React.FC = () => {
     handlePermanentDeleteNote(noteId, 'local', async () => { });
 
     setToastMessage(`Notiz "${noteToMove.title}" wird in die Cloud verschoben.`);
+  };
+
+  const requestDeleteNote = (id: string, location: 'local' | 'cloud') => {
+    setPendingDelete({ id, location });
+    setConfirmModalOpen(true);
+  };
+
+  const handleConfirmAction = () => {
+    if (pendingDelete) {
+      handleDeleteNote(pendingDelete.id, pendingDelete.location);
+      setPendingDelete(null);
+      setConfirmModalOpen(false);
+      setToastMessage("Notiz in den Papierkorb verschoben.");
+    } else {
+      setConfirmModalOpen(false);
+      syncCloudNotes();
+    }
   };
 
   const toggleTheme = () => {
@@ -227,15 +242,15 @@ const App: React.FC = () => {
             <div className="flex items-center space-x-2 md:space-x-4">
               {isCloudConfigured && (
                 <button
-                  onClick={() => setConfirmModalOpen(true)}
+                  onClick={() => { setPendingDelete(null); setConfirmModalOpen(true); }}
                   disabled={syncStatus === 'syncing'}
                   className="p-2 rounded-full text-secondary hover:bg-secondary/10 disabled:opacity-50 transition-colors relative"
                   title="Synchronisieren"
                 >
                   <SyncIcon className={syncStatus === 'syncing' ? 'animate-spin' : ''} />
                   <span className={`absolute top-1 right-1 block h-2.5 w-2.5 rounded-full ring-2 ring-surface ${syncStatus === 'synced' ? 'bg-green-400' :
-                      syncStatus === 'syncing' ? 'bg-yellow-400' :
-                        syncStatus === 'error' ? 'bg-red-500' : 'bg-gray-400'
+                    syncStatus === 'syncing' ? 'bg-yellow-400' :
+                      syncStatus === 'error' ? 'bg-red-500' : 'bg-gray-400'
                     }`} />
                 </button>
               )}
@@ -313,7 +328,7 @@ const App: React.FC = () => {
                   view='active'
                   location={activeLocalNotes.some(n => n.id === note.id) ? 'local' : 'cloud'}
                   onView={() => openNoteView(note, activeLocalNotes.some(n => n.id === note.id) ? 'local' : 'cloud')}
-                  onDelete={() => handleDeleteNote(note.id, activeLocalNotes.some(n => n.id === note.id) ? 'local' : 'cloud')}
+                  onDelete={() => requestDeleteNote(note.id, activeLocalNotes.some(n => n.id === note.id) ? 'local' : 'cloud')}
                   isDeleting={deletingNoteIds.has(note.id)}
                   isUpdated={updatedNoteId === note.id}
                 />
@@ -387,7 +402,7 @@ const App: React.FC = () => {
         isOpen={isViewModalOpen}
         onClose={closeAllModals}
         onEdit={openNoteEditor}
-        onDelete={() => activeNote && activeNoteLocation && handleDeleteNote(activeNote.id, activeNoteLocation)}
+        onDelete={() => activeNote && activeNoteLocation && requestDeleteNote(activeNote.id, activeNoteLocation)}
         note={activeNote}
         onUpdateNote={(updatedNote) => handleSaveNoteWrapper(updatedNote)}
         location={activeNoteLocation}
@@ -406,9 +421,9 @@ const App: React.FC = () => {
       <ConfirmModal
         isOpen={isConfirmModalOpen}
         onClose={closeAllModals}
-        onConfirm={() => { setConfirmModalOpen(false); syncCloudNotes(); }}
-        title="Synchronisierung bestätigen"
-        message="Möchten Sie wirklich synchronisieren?"
+        onConfirm={handleConfirmAction}
+        title={pendingDelete ? "Notiz löschen" : "Synchronisierung bestätigen"}
+        message={pendingDelete ? "Möchten Sie diese Notiz wirklich in den Papierkorb verschieben?" : "Möchten Sie wirklich synchronisieren?"}
       />
 
       {toastMessage && <Toast message={toastMessage} />}

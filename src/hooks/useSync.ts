@@ -13,6 +13,12 @@ export const useSync = (
     const [syncError, setSyncError] = useState<string | null>(null);
     const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
     const isSyncingRef = useRef(false);
+    const cloudNotesRef = useRef<Note[]>(cloudNotes);
+
+    // Keep cloudNotesRef in sync with cloudNotes
+    useEffect(() => {
+        cloudNotesRef.current = cloudNotes;
+    }, [cloudNotes]);
 
     const syncCloudNotes = useCallback(async () => {
         if (!isCloudConfigured || isSyncingRef.current) return;
@@ -36,7 +42,8 @@ export const useSync = (
             let hasChangesToUpload = false;
 
             // Iterate through local cloud notes to check for updates/new notes
-            cloudNotes.forEach(localNote => {
+            // Use the ref to get current cloudNotes value without dependency
+            cloudNotesRef.current.forEach(localNote => {
                 const remoteNote = mergedNotesMap.get(localNote.id);
 
                 if (!remoteNote) {
@@ -64,11 +71,6 @@ export const useSync = (
 
             const mergedNotes = Array.from(mergedNotesMap.values());
 
-            // Check if we need to upload
-            // We upload if we detected local changes that are newer (hasChangesToUpload)
-            // OR if we have pending syncs that we decided to keep.
-            // Actually, hasChangesToUpload covers the "keep local" case.
-
             if (hasChangesToUpload) {
                 // Clean up isPendingSync before uploading
                 const notesToUpload = mergedNotes.map(n => {
@@ -81,13 +83,7 @@ export const useSync = (
                 // Update local state with the clean version (no isPendingSync)
                 setCloudNotes(notesToUpload);
             } else {
-                // No changes to upload, but we might have received updates from Gist (new notes or newer versions)
-                // We update local state to match the merged result (which is effectively the Gist content + any new local notes if we had them... wait)
-                // If hasChangesToUpload is false, it means:
-                // 1. No new local notes.
-                // 2. No local notes were newer than remote.
-                // So mergedNotes is exactly remoteNotes (or remoteNotes + nothing).
-                // So we just update local to match remote.
+                // No changes to upload, but we might have received updates from Gist
                 setCloudNotes(mergedNotes);
             }
 
@@ -100,18 +96,26 @@ export const useSync = (
         } finally {
             isSyncingRef.current = false;
         }
-    }, [effectiveSettings, isCloudConfigured, cloudNotes, setCloudNotes, migrateNotes]);
+    }, [effectiveSettings, isCloudConfigured, setCloudNotes, migrateNotes]);
 
     // Automatic background sync
     useEffect(() => {
         if (!isCloudConfigured) return;
 
-        syncCloudNotes(); // Initial sync
+        // Call sync immediately on mount
+        const doSync = async () => {
+            await syncCloudNotes();
+        };
+        doSync();
 
-        const intervalId = setInterval(syncCloudNotes, 60000); // Poll every 60 seconds
+        // Set up interval for background sync
+        const intervalId = setInterval(() => {
+            doSync();
+        }, 60000); // Poll every 60 seconds
 
         return () => clearInterval(intervalId);
-    }, [isCloudConfigured, syncCloudNotes]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isCloudConfigured]); // Only re-run when cloud configuration changes
 
     return {
         syncStatus,
