@@ -74,47 +74,55 @@ export const useNotes = (isCloudConfigured: boolean, syncCloudNotes: () => void)
         }
     };
 
-    const handlePermanentDeleteNote = (noteId: string, location: 'local' | 'cloud', updateGistContent: (notes: Note[]) => Promise<void>) => {
+    const handlePermanentDeleteNote = async (noteId: string, location: 'local' | 'cloud', updateGistContent: (notes: Note[]) => Promise<void>) => {
         setDeletingNoteIds(prev => new Set(prev).add(noteId));
 
-        setTimeout(() => {
-            if (location === 'local') {
-                setLocalNotes(prev => prev.filter(n => n.id !== noteId));
-            } else if (location === 'cloud' && isCloudConfigured) {
-                const newCloudNotes = cloudNotes.filter(n => n.id !== noteId);
-                updateGistContent(newCloudNotes)
-                    .then(() => {
-                        setCloudNotes(newCloudNotes);
-                    })
-                    .catch(error => {
-                        console.error("Fehler beim endgültigen Löschen der Cloud-Notiz:", error);
-                    });
-            } else if (location === 'cloud' && !isCloudConfigured) {
-                setCloudNotes(prev => prev.filter(n => n.id !== noteId));
-            }
+        // Wait for animation
+        await new Promise(resolve => setTimeout(resolve, 300));
 
-            setDeletingNoteIds(prev => {
-                const next = new Set(prev);
-                next.delete(noteId);
-                return next;
-            });
-        }, 300);
+        if (location === 'local') {
+            setLocalNotes(prev => prev.filter(n => n.id !== noteId));
+        } else if (location === 'cloud' && isCloudConfigured) {
+            const newCloudNotes = cloudNotes.filter(n => n.id !== noteId);
+            try {
+                await updateGistContent(newCloudNotes);
+                setCloudNotes(newCloudNotes);
+            } catch (error) {
+                console.error("Fehler beim endgültigen Löschen der Cloud-Notiz:", error);
+                // Revert animation state if failed
+                setDeletingNoteIds(prev => {
+                    const next = new Set(prev);
+                    next.delete(noteId);
+                    return next;
+                });
+                throw error; // Re-throw to let caller handle it
+            }
+        } else if (location === 'cloud' && !isCloudConfigured) {
+            setCloudNotes(prev => prev.filter(n => n.id !== noteId));
+        }
+
+        setDeletingNoteIds(prev => {
+            const next = new Set(prev);
+            next.delete(noteId);
+            return next;
+        });
     };
 
-    const handleEmptyTrash = (updateGistContent: (notes: Note[]) => Promise<void>) => {
+    const handleEmptyTrash = async (updateGistContent: (notes: Note[]) => Promise<void>) => {
         // Empty local trash
         setLocalNotes(prev => prev.filter(n => !n.deletedAt));
 
         // Empty cloud trash
         if (isCloudConfigured) {
             const newCloudNotes = cloudNotes.filter(n => !n.deletedAt);
-            // Optimistic update
-            setCloudNotes(newCloudNotes);
 
-            updateGistContent(newCloudNotes)
-                .catch(error => {
-                    console.error("Fehler beim Leeren des Papierkorbs (Cloud):", error);
-                });
+            try {
+                await updateGistContent(newCloudNotes);
+                setCloudNotes(newCloudNotes);
+            } catch (error) {
+                console.error("Fehler beim Leeren des Papierkorbs (Cloud):", error);
+                throw error;
+            }
         } else {
             setCloudNotes(prev => prev.filter(n => !n.deletedAt));
         }

@@ -188,10 +188,15 @@ const App: React.FC = () => {
     }
   };
 
-  const handleEmptyTrashConfirm = () => {
-    handleEmptyTrash(updateGistContent);
+  const handleEmptyTrashConfirm = async () => {
     setIsEmptyTrashConfirmOpen(false);
-    setToastMessage("Papierkorb geleert.");
+    setToastMessage("Papierkorb wird geleert...");
+    try {
+      await handleEmptyTrash(updateGistContent);
+      setToastMessage("Papierkorb erfolgreich geleert.");
+    } catch (error) {
+      setToastMessage("Fehler beim Leeren des Papierkorbs.");
+    }
   };
 
   const toggleTheme = () => {
@@ -378,7 +383,7 @@ const App: React.FC = () => {
                     view='deleted'
                     location={deletedLocalNotes.some(n => n.id === note.id) ? 'local' : 'cloud'}
                     onRestore={() => handleRestoreNote(note.id, deletedLocalNotes.some(n => n.id === note.id) ? 'local' : 'cloud')}
-                    onPermanentDelete={() => handlePermanentDeleteNote(note.id, deletedLocalNotes.some(n => n.id === note.id) ? 'local' : 'cloud', updateGistContent)}
+                    onPermanentDelete={() => handlePermanentDeleteNote(note.id, deletedLocalNotes.some(n => n.id === note.id) ? 'local' : 'cloud', updateGistContent).catch(() => setToastMessage("Fehler beim Löschen der Notiz."))}
                     isDeleting={deletingNoteIds.has(note.id)}
                   />
                 </div>
@@ -429,6 +434,7 @@ const App: React.FC = () => {
           const location = activeNoteLocation;
           if (!location) return;
           handleSaveNote(updatedNote, location, true);
+          setActiveNote(updatedNote);
         }}
         location={activeNoteLocation}
         onMoveToCloud={() => activeNote && activeNoteLocation === 'local' && handleMoveNoteToCloud(activeNote.id)}
