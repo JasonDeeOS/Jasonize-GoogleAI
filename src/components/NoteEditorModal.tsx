@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Reorder } from 'framer-motion';
 import { Note, NoteType, ListItem } from '../types';
 import useShoppingHistory from '../hooks/useShoppingHistory';
 import { COMMON_GROCERY_ITEMS, SHOPPING_CATEGORIES } from '../constants';
@@ -36,6 +37,7 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
   const [title, setTitle] = useState('');
   const [content, setContent] = useState<string | ListItem[]>('');
   const [tags, setTags] = useState<string[]>([]);
+  const [color, setColor] = useState<string | undefined>(undefined);
 
   const frequentlyBought = useShoppingHistory(allNotes);
   const [quickAddItemText, setQuickAddItemText] = useState('');
@@ -48,10 +50,12 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
         setTitle(noteToEdit.title);
         setContent(noteToEdit.content);
         setTags(noteToEdit.tags || []);
+        setColor(noteToEdit.color);
       } else {
         setTitle('');
         setContent(noteType === NoteType.Text ? '' : []);
         setTags([]);
+        setColor(undefined);
       }
       setQuickAddItemText('');
     }
@@ -165,6 +169,7 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
       noteType: noteToEdit?.noteType || noteType,
       content,
       tags,
+      color,
       createdAt: noteToEdit?.createdAt || now,
       updatedAt: now,
     };
@@ -189,6 +194,44 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
 
   const removeListItem = (id: string) => {
     setContent(c => (Array.isArray(c) ? c : []).filter(item => item.id !== id));
+  };
+
+  const handleReorder = (category: string, newOrder: ListItem[]) => {
+    setContent(currentContent => {
+      if (!Array.isArray(currentContent)) return currentContent;
+
+      // Group current items to preserve other categories
+      const currentGrouped = currentContent.reduce((acc, item) => {
+        const cat = item.category || 'Sonstiges';
+        if (!acc[cat]) acc[cat] = [];
+        acc[cat].push(item);
+        return acc;
+      }, {} as Record<string, ListItem[]>);
+
+      // Update the specific category
+      currentGrouped[category] = newOrder;
+
+      // Flatten back to array, respecting SHOPPING_CATEGORIES order for consistency
+      const newContent: ListItem[] = [];
+      const processedCategories = new Set<string>();
+
+      // First add standard categories in order
+      SHOPPING_CATEGORIES.forEach(cat => {
+        if (currentGrouped[cat]) {
+          newContent.push(...currentGrouped[cat]);
+          processedCategories.add(cat);
+        }
+      });
+
+      // Then add any other categories (like 'Sonstiges' or custom ones)
+      Object.keys(currentGrouped).forEach(cat => {
+        if (!processedCategories.has(cat)) {
+          newContent.push(...currentGrouped[cat]);
+        }
+      });
+
+      return newContent;
+    });
   };
 
   const renderContentEditor = () => {
@@ -278,17 +321,22 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
                   <div key={category}>
                     <h4 className="text-md font-semibold text-primary mb-2 border-b border-on-background/20 pb-1">{category}</h4>
                     <div className="space-y-2">
-                      {groupedItems[category].map(item => (
-                        <div key={item.id} className="grid grid-cols-[auto,1fr,auto] sm:flex sm:items-center gap-2 p-1.5 rounded-md hover:bg-on-background/5">
-                          <input type="checkbox" checked={item.completed} onChange={e => updateListItem(item.id, { completed: e.target.checked })} className="flex-shrink-0 h-5 w-5 rounded text-primary bg-surface border-on-background/30 focus:ring-primary cursor-pointer" />
-                          <input type="text" value={item.text} onChange={e => updateListItem(item.id, { text: e.target.value })} placeholder="Artikelname" className="col-span-2 sm:col-auto sm:flex-grow bg-transparent p-1 text-on-background font-semibold focus:ring-0 focus:border-primary border-0 border-b border-on-background/20 outline-none" />
-                          <div className="col-start-2 col-span-2 sm:col-auto flex items-center gap-2">
-                            <input type="text" value={item.quantity || ''} onChange={e => updateListItem(item.id, { quantity: e.target.value })} placeholder="Menge" className="w-full sm:w-24 bg-on-background/10 rounded-sm p-1 text-sm text-on-background/80 placeholder-on-background/50 focus:ring-1 focus:ring-primary outline-none" />
-                            <input type="text" value={item.notes || ''} onChange={e => updateListItem(item.id, { notes: e.target.value })} placeholder="Notiz" className="w-full sm:w-24 bg-on-background/10 rounded-sm p-1 text-sm text-on-background/80 placeholder-on-background/50 focus:ring-1 focus:ring-primary outline-none" />
-                            <button onClick={() => removeListItem(item.id)} className="p-2 text-on-surface/60 hover:text-danger"><TrashIcon className="w-4 h-4" /></button>
-                          </div>
-                        </div>
-                      ))}
+                      <Reorder.Group axis="y" values={groupedItems[category]} onReorder={(newOrder) => handleReorder(category, newOrder)}>
+                        {groupedItems[category].map(item => (
+                          <Reorder.Item key={item.id} value={item} className="mb-2">
+                            <div className="flex items-center gap-2 p-1.5 rounded-md bg-surface border border-on-background/10 hover:border-primary/30 transition-colors cursor-grab active:cursor-grabbing">
+                              <span className="text-on-background/30 cursor-grab active:cursor-grabbing select-none">⋮⋮</span>
+                              <input type="text" value={item.text} onChange={e => updateListItem(item.id, { text: e.target.value })} placeholder="Artikelname" className="flex-grow bg-transparent p-1 text-on-background font-semibold focus:ring-0 focus:border-primary border-0 border-b border-on-background/20 outline-none" />
+                              <div className="flex items-center gap-2">
+                                <input type="number" value={item.price || ''} onChange={e => updateListItem(item.id, { price: parseFloat(e.target.value) })} placeholder="€" className="w-16 bg-on-background/10 rounded-sm p-1 text-sm text-on-background/80 placeholder-on-background/50 focus:ring-1 focus:ring-primary outline-none text-right" />
+                                <input type="text" value={item.quantity || ''} onChange={e => updateListItem(item.id, { quantity: e.target.value })} placeholder="Menge" className="w-20 bg-on-background/10 rounded-sm p-1 text-sm text-on-background/80 placeholder-on-background/50 focus:ring-1 focus:ring-primary outline-none" />
+                                <input type="text" value={item.notes || ''} onChange={e => updateListItem(item.id, { notes: e.target.value })} placeholder="Notiz" className="w-24 bg-on-background/10 rounded-sm p-1 text-sm text-on-background/80 placeholder-on-background/50 focus:ring-1 focus:ring-primary outline-none" />
+                                <button onClick={() => removeListItem(item.id)} className="p-2 text-on-surface/60 hover:text-danger"><TrashIcon className="w-4 h-4" /></button>
+                              </div>
+                            </div>
+                          </Reorder.Item>
+                        ))}
+                      </Reorder.Group>
                     </div>
                   </div>
                 )
@@ -346,7 +394,17 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
           </div>
           {renderContentEditor()}
         </main>
-        <footer className="p-4 bg-surface/80 backdrop-blur-sm border-t border-on-background/20 flex-shrink-0 flex justify-end">
+        <footer className="p-4 bg-surface/80 backdrop-blur-sm border-t border-on-background/20 flex-shrink-0 flex justify-between items-center">
+          <div className="flex gap-2">
+            {[undefined, 'bg-red-100 dark:bg-red-900', 'bg-orange-100 dark:bg-orange-900', 'bg-yellow-100 dark:bg-yellow-900', 'bg-green-100 dark:bg-green-900', 'bg-blue-100 dark:bg-blue-900', 'bg-purple-100 dark:bg-purple-900', 'bg-pink-100 dark:bg-pink-900'].map((c) => (
+              <button
+                key={c || 'default'}
+                onClick={() => setColor(c)}
+                className={`w-6 h-6 rounded-full border border-on-background/20 ${c || 'bg-surface'} ${color === c ? 'ring-2 ring-primary ring-offset-1 ring-offset-surface' : ''}`}
+                title="Farbe wählen"
+              />
+            ))}
+          </div>
           <button onClick={handleSave} className="px-6 py-2 rounded-md bg-primary text-on-primary font-semibold hover:bg-primary-variant transition-colors">
             Speichern
           </button>

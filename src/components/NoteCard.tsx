@@ -81,7 +81,7 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onView, onDelete, onRestore, 
   }
 
   const cardClasses = [
-    'group', 'relative', 'bg-surface', 'p-4', 'rounded-lg', 'shadow-lg',
+    'group', 'relative', note.color || 'bg-surface', 'p-4', 'rounded-lg', 'shadow-lg',
     'transition-all', 'duration-300',
     'flex', 'flex-col', 'justify-between', 'min-h-[130px]',
     isDeleting ? 'opacity-0 scale-95' : '',

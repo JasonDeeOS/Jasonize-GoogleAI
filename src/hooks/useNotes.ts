@@ -88,11 +88,6 @@ export const useNotes = (isCloudConfigured: boolean, syncCloudNotes: () => void)
                     })
                     .catch(error => {
                         console.error("Fehler beim endgültigen Löschen der Cloud-Notiz:", error);
-                        // Restore note to UI on failure - handled by caller or just don't update state?
-                        // In original code, it sets sync error.
-                        // For now we just return the promise and let caller handle UI feedback if needed, 
-                        // but here we are updating state optimistically or after success.
-                        // The original code updated state inside the promise.
                     });
             } else if (location === 'cloud' && !isCloudConfigured) {
                 setCloudNotes(prev => prev.filter(n => n.id !== noteId));
@@ -104,6 +99,25 @@ export const useNotes = (isCloudConfigured: boolean, syncCloudNotes: () => void)
                 return next;
             });
         }, 300);
+    };
+
+    const handleEmptyTrash = (updateGistContent: (notes: Note[]) => Promise<void>) => {
+        // Empty local trash
+        setLocalNotes(prev => prev.filter(n => !n.deletedAt));
+
+        // Empty cloud trash
+        if (isCloudConfigured) {
+            const newCloudNotes = cloudNotes.filter(n => !n.deletedAt);
+            // Optimistic update
+            setCloudNotes(newCloudNotes);
+
+            updateGistContent(newCloudNotes)
+                .catch(error => {
+                    console.error("Fehler beim Leeren des Papierkorbs (Cloud):", error);
+                });
+        } else {
+            setCloudNotes(prev => prev.filter(n => !n.deletedAt));
+        }
     };
 
     const activeLocalNotes = useMemo(() => localNotes.filter(n => !n.deletedAt).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()), [localNotes]);
@@ -126,6 +140,7 @@ export const useNotes = (isCloudConfigured: boolean, syncCloudNotes: () => void)
         handleDeleteNote,
         handleRestoreNote,
         handlePermanentDeleteNote,
+        handleEmptyTrash,
         deletingNoteIds,
         updatedNoteId,
         setUpdatedNoteId,

@@ -47,6 +47,7 @@ const App: React.FC = () => {
     handleDeleteNote,
     handleRestoreNote,
     handlePermanentDeleteNote,
+    handleEmptyTrash,
     deletingNoteIds,
     updatedNoteId,
     migrateNotes
@@ -86,6 +87,7 @@ const App: React.FC = () => {
   const [isViewModalOpen, setViewModalOpen] = useState(false);
   const [isEditorModalOpen, setEditorModalOpen] = useState(false);
   const [isConfirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [isEmptyTrashConfirmOpen, setIsEmptyTrashConfirmOpen] = useState(false);
 
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [activeNoteLocation, setActiveNoteLocation] = useState<'local' | 'cloud' | null>(null);
@@ -119,6 +121,7 @@ const App: React.FC = () => {
     setViewModalOpen(false);
     setEditorModalOpen(false);
     setConfirmModalOpen(false);
+    setIsEmptyTrashConfirmOpen(false);
     setActiveNote(null);
     setActiveNoteLocation(null);
     setNewNoteConfig(null);
@@ -185,6 +188,12 @@ const App: React.FC = () => {
     }
   };
 
+  const handleEmptyTrashConfirm = () => {
+    handleEmptyTrash(updateGistContent);
+    setIsEmptyTrashConfirmOpen(false);
+    setToastMessage("Papierkorb geleert.");
+  };
+
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   };
@@ -209,7 +218,11 @@ const App: React.FC = () => {
       notes = activeCloudNotes;
     }
     // Sort by date desc
-    notes.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    notes.sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    });
     return filterNotes(notes);
   }, [activeTab, activeLocalNotes, activeCloudNotes, searchQuery, filterTag]);
 
@@ -344,7 +357,15 @@ const App: React.FC = () => {
         {/* Deleted Notes Section (Optional, maybe hide behind a toggle or separate view in future) */}
         {(deletedLocalNotes.length > 0 || deletedCloudNotes.length > 0) && (
           <div className="mt-12 border-t border-on-background/10 pt-8">
-            <h2 className="text-xl font-semibold mb-4 text-on-background/70">Papierkorb</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-on-background/70">Papierkorb</h2>
+              <button
+                onClick={() => setIsEmptyTrashConfirmOpen(true)}
+                className="px-3 py-1 text-sm text-danger hover:bg-danger/10 rounded-md transition-colors"
+              >
+                Papierkorb leeren
+              </button>
+            </div>
             <Masonry
               breakpointCols={masonryBreakpointCols}
               className="flex w-auto -ml-4"
@@ -404,7 +425,11 @@ const App: React.FC = () => {
         onEdit={openNoteEditor}
         onDelete={() => activeNote && activeNoteLocation && requestDeleteNote(activeNote.id, activeNoteLocation)}
         note={activeNote}
-        onUpdateNote={(updatedNote) => handleSaveNoteWrapper(updatedNote)}
+        onUpdateNote={(updatedNote) => {
+          const location = activeNoteLocation;
+          if (!location) return;
+          handleSaveNote(updatedNote, location, true);
+        }}
         location={activeNoteLocation}
         onMoveToCloud={() => activeNote && activeNoteLocation === 'local' && handleMoveNoteToCloud(activeNote.id)}
       />
@@ -424,6 +449,14 @@ const App: React.FC = () => {
         onConfirm={handleConfirmAction}
         title={pendingDelete ? "Notiz löschen" : "Synchronisierung bestätigen"}
         message={pendingDelete ? "Möchten Sie diese Notiz wirklich in den Papierkorb verschieben?" : "Möchten Sie wirklich synchronisieren?"}
+      />
+
+      <ConfirmModal
+        isOpen={isEmptyTrashConfirmOpen}
+        onClose={() => setIsEmptyTrashConfirmOpen(false)}
+        onConfirm={handleEmptyTrashConfirm}
+        title="Papierkorb leeren"
+        message="Möchten Sie wirklich alle Notizen im Papierkorb endgültig löschen? Diese Aktion kann nicht rückgängig gemacht werden."
       />
 
       {toastMessage && <Toast message={toastMessage} />}
