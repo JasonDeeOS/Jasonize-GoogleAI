@@ -13,6 +13,12 @@ export const useSync = (
     const [syncError, setSyncError] = useState<string | null>(null);
     const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
     const isSyncingRef = useRef(false);
+    const cloudNotesRef = useRef<Note[]>(cloudNotes);
+
+    // Keep cloudNotesRef in sync with cloudNotes
+    useEffect(() => {
+        cloudNotesRef.current = cloudNotes;
+    }, [cloudNotes]);
 
     const syncCloudNotes = useCallback(async () => {
         if (!isCloudConfigured || isSyncingRef.current) return;
@@ -21,24 +27,64 @@ export const useSync = (
         setSyncStatus('syncing');
         setSyncError(null);
         try {
+            // 1. Fetch latest from Cloud
             const notesFromGist = await getGistContent(effectiveSettings);
+            const migratedGistNotes = migrateNotes(notesFromGist);
 
-            const localPendingNotes = cloudNotes.filter(n => n.isPendingSync);
+            // 2. Merge Strategy
+            const mergedNotesMap = new Map<string, Note>();
 
-            if (localPendingNotes.length === 0) {
-                setCloudNotes(migrateNotes(notesFromGist));
-            } else {
-                const notesFromGistMap = new Map(notesFromGist.map(n => [n.id, n]));
+            // Start with all Gist notes
+            migratedGistNotes.forEach(note => {
+                mergedNotesMap.set(note.id, note);
+            });
 
-                localPendingNotes.forEach(pendingNote => {
-                    const { isPendingSync, ...noteToSync } = pendingNote;
-                    notesFromGistMap.set(noteToSync.id, noteToSync);
+            let hasChangesToUpload = false;
+
+            // Iterate through local cloud notes to check for updates/new notes
+            // Use the ref to get current cloudNotes value without dependency
+            cloudNotesRef.current.forEach(localNote => {
+                const remoteNote = mergedNotesMap.get(localNote.id);
+
+                if (!remoteNote) {
+                    // Note exists locally but not in Gist (New Note created locally)
+                    // We assume it's a new note and add it
+                    mergedNotesMap.set(localNote.id, localNote);
+                    hasChangesToUpload = true;
+                } else {
+                    // Note exists in both. Conflict resolution based on updatedAt.
+                    const localDate = new Date(localNote.updatedAt).getTime();
+                    const remoteDate = new Date(remoteNote.updatedAt).getTime();
+
+                    // We use a small buffer (e.g. 1000ms) to avoid ping-ponging due to clock skew
+                    // But for strict "Last Write Wins", strict comparison is usually fine.
+                    if (localDate > remoteDate) {
+                        // Local is newer, keep local
+                        mergedNotesMap.set(localNote.id, localNote);
+                        hasChangesToUpload = true;
+                    } else {
+                        // Remote is newer (or equal), keep remote
+                        // No change to upload for this note
+                    }
+                }
+            });
+
+            const mergedNotes = Array.from(mergedNotesMap.values());
+
+            if (hasChangesToUpload) {
+                // Clean up isPendingSync before uploading
+                const notesToUpload = mergedNotes.map(n => {
+                    const { isPendingSync, ...rest } = n;
+                    return rest as Note;
                 });
 
-                const notesToUpload = Array.from(notesFromGistMap.values());
-
                 await updateGistContent(effectiveSettings, notesToUpload);
+
+                // Update local state with the clean version (no isPendingSync)
                 setCloudNotes(notesToUpload);
+            } else {
+                // No changes to upload, but we might have received updates from Gist
+                setCloudNotes(mergedNotes);
             }
 
             setSyncStatus('synced');
@@ -50,18 +96,26 @@ export const useSync = (
         } finally {
             isSyncingRef.current = false;
         }
-    }, [effectiveSettings, isCloudConfigured, cloudNotes, setCloudNotes, migrateNotes]);
+    }, [effectiveSettings, isCloudConfigured, setCloudNotes, migrateNotes]);
 
     // Automatic background sync
     useEffect(() => {
         if (!isCloudConfigured) return;
 
-        syncCloudNotes(); // Initial sync
+        // Call sync immediately on mount
+        const doSync = async () => {
+            await syncCloudNotes();
+        };
+        doSync();
 
-        const intervalId = setInterval(syncCloudNotes, 60000); // Poll every 60 seconds
+        // Set up interval for background sync
+        const intervalId = setInterval(() => {
+            doSync();
+        }, 60000); // Poll every 60 seconds
 
         return () => clearInterval(intervalId);
-    }, [isCloudConfigured, syncCloudNotes]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isCloudConfigured]); // Only re-run when cloud configuration changes
 
     return {
         syncStatus,

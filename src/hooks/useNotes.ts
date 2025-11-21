@@ -51,11 +51,11 @@ export const useNotes = (isCloudConfigured: boolean, syncCloudNotes: () => void)
     };
 
     const handleDeleteNote = (noteId: string, location: 'local' | 'cloud') => {
-        const deletedAt = new Date().toISOString();
+        const now = new Date().toISOString();
         if (location === 'local') {
-            setLocalNotes(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt } : n));
+            setLocalNotes(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt: now, updatedAt: now } : n));
         } else if (location === 'cloud') {
-            setCloudNotes(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt, isPendingSync: true } : n));
+            setCloudNotes(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt: now, updatedAt: now, isPendingSync: true } : n));
             if (isCloudConfigured) {
                 syncCloudNotes();
             }
@@ -63,10 +63,11 @@ export const useNotes = (isCloudConfigured: boolean, syncCloudNotes: () => void)
     };
 
     const handleRestoreNote = (noteId: string, location: 'local' | 'cloud') => {
+        const now = new Date().toISOString();
         if (location === 'local') {
-            setLocalNotes(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt: null } : n));
+            setLocalNotes(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt: null, updatedAt: now } : n));
         } else if (location === 'cloud') {
-            setCloudNotes(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt: null, isPendingSync: true } : n));
+            setCloudNotes(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt: null, updatedAt: now, isPendingSync: true } : n));
             if (isCloudConfigured) {
                 syncCloudNotes();
             }
