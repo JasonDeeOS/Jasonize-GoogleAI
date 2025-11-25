@@ -50,7 +50,8 @@ const App: React.FC = () => {
     handleEmptyTrash,
     deletingNoteIds,
     updatedNoteId,
-    migrateNotes
+    migrateNotes,
+    recentlyPermanentlyDeletedIds
   } = useNotes(isCloudConfigured, () => syncCloudNotesRef.current());
 
   const effectiveSettings = settings.gistId && settings.token ? settings : DEV_FALLBACK_SETTINGS;
@@ -62,7 +63,7 @@ const App: React.FC = () => {
     lastSyncTime,
     syncCloudNotes,
     updateGistContent
-  } = useSync(effectiveSettings, isCloudConfigured, cloudNotes, setCloudNotes, migrateNotes);
+  } = useSync(effectiveSettings, isCloudConfigured, cloudNotes, setCloudNotes, migrateNotes, recentlyPermanentlyDeletedIds);
 
   useEffect(() => {
     syncCloudNotesRef.current = syncCloudNotes;

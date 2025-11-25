@@ -10,6 +10,10 @@ export const useNotes = (isCloudConfigured: boolean, syncCloudNotes: () => void)
     const [deletingNoteIds, setDeletingNoteIds] = useState(new Set<string>());
     const [updatedNoteId, setUpdatedNoteId] = useState<string | null>(null);
 
+    // Track IDs of notes that were permanently deleted in this session
+    // to prevent them from being re-added by sync (race condition)
+    const [recentlyPermanentlyDeletedIds, setRecentlyPermanentlyDeletedIds] = useState(new Set<string>());
+
     const migrateNotes = (notes: any[]): Note[] => {
         return notes.map(note => {
             let migratedNote = { ...note };
@@ -83,6 +87,9 @@ export const useNotes = (isCloudConfigured: boolean, syncCloudNotes: () => void)
         if (location === 'local') {
             setLocalNotes(prev => prev.filter(n => n.id !== noteId));
         } else if (location === 'cloud' && isCloudConfigured) {
+            // Track this ID as permanently deleted
+            setRecentlyPermanentlyDeletedIds(prev => new Set(prev).add(noteId));
+
             const newCloudNotes = cloudNotes.filter(n => n.id !== noteId);
             try {
                 await updateGistContent(newCloudNotes);
@@ -91,6 +98,12 @@ export const useNotes = (isCloudConfigured: boolean, syncCloudNotes: () => void)
                 console.error("Fehler beim endgültigen Löschen der Cloud-Notiz:", error);
                 // Revert animation state if failed
                 setDeletingNoteIds(prev => {
+                    const next = new Set(prev);
+                    next.delete(noteId);
+                    return next;
+                });
+                // Also remove from tracked deleted IDs if it failed (optional, but good for consistency)
+                setRecentlyPermanentlyDeletedIds(prev => {
                     const next = new Set(prev);
                     next.delete(noteId);
                     return next;
@@ -114,7 +127,15 @@ export const useNotes = (isCloudConfigured: boolean, syncCloudNotes: () => void)
 
         // Empty cloud trash
         if (isCloudConfigured) {
+            const notesToDelete = cloudNotes.filter(n => n.deletedAt);
             const newCloudNotes = cloudNotes.filter(n => !n.deletedAt);
+
+            // Track all deleted IDs
+            setRecentlyPermanentlyDeletedIds(prev => {
+                const next = new Set(prev);
+                notesToDelete.forEach(n => next.add(n.id));
+                return next;
+            });
 
             try {
                 await updateGistContent(newCloudNotes);
@@ -152,6 +173,7 @@ export const useNotes = (isCloudConfigured: boolean, syncCloudNotes: () => void)
         deletingNoteIds,
         updatedNoteId,
         setUpdatedNoteId,
-        migrateNotes
+        migrateNotes,
+        recentlyPermanentlyDeletedIds // Expose this
     };
 };

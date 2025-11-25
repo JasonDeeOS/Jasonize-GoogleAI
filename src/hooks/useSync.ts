@@ -7,7 +7,8 @@ export const useSync = (
     isCloudConfigured: boolean,
     cloudNotes: Note[],
     setCloudNotes: (notes: Note[]) => void,
-    migrateNotes: (notes: any[]) => Note[]
+    migrateNotes: (notes: any[]) => Note[],
+    recentlyPermanentlyDeletedIds: Set<string>
 ) => {
     const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
     const [syncError, setSyncError] = useState<string | null>(null);
@@ -31,41 +32,30 @@ export const useSync = (
             const notesFromGist = await getGistContent(effectiveSettings);
             const migratedGistNotes = migrateNotes(notesFromGist);
 
-            // 2. Merge Strategy
+            // 2. Strict Mirror + Overlay Strategy
             const mergedNotesMap = new Map<string, Note>();
-
-            // Start with all Gist notes
-            migratedGistNotes.forEach(note => {
-                mergedNotesMap.set(note.id, note);
-            });
-
             let hasChangesToUpload = false;
 
-            // Iterate through local cloud notes to check for updates/new notes
-            // Use the ref to get current cloudNotes value without dependency
-            cloudNotesRef.current.forEach(localNote => {
-                const remoteNote = mergedNotesMap.get(localNote.id);
+            // A. Base: Start with Gist notes
+            migratedGistNotes.forEach(note => {
+                // Filter out recently deleted ones (race condition protection)
+                if (!recentlyPermanentlyDeletedIds.has(note.id)) {
+                    mergedNotesMap.set(note.id, note);
+                } else {
+                    // If we filtered it out locally, we MUST ensure this deletion is synced to Gist
+                    hasChangesToUpload = true;
+                }
+            });
 
-                if (!remoteNote) {
-                    // Note exists locally but not in Gist (New Note created locally)
-                    // We assume it's a new note and add it
+            // B. Overlay: Apply local pending changes
+            // We only care about local notes that are PENDING SYNC.
+            // Everything else in local state that is NOT in Gist is considered "deleted remotely" and ignored (dropped).
+            cloudNotesRef.current.forEach(localNote => {
+                if (localNote.isPendingSync) {
+                    // This is a local change waiting to be uploaded.
+                    // It takes precedence over Gist (or adds to it if new).
                     mergedNotesMap.set(localNote.id, localNote);
                     hasChangesToUpload = true;
-                } else {
-                    // Note exists in both. Conflict resolution based on updatedAt.
-                    const localDate = new Date(localNote.updatedAt).getTime();
-                    const remoteDate = new Date(remoteNote.updatedAt).getTime();
-
-                    // We use a small buffer (e.g. 1000ms) to avoid ping-ponging due to clock skew
-                    // But for strict "Last Write Wins", strict comparison is usually fine.
-                    if (localDate > remoteDate) {
-                        // Local is newer, keep local
-                        mergedNotesMap.set(localNote.id, localNote);
-                        hasChangesToUpload = true;
-                    } else {
-                        // Remote is newer (or equal), keep remote
-                        // No change to upload for this note
-                    }
                 }
             });
 
@@ -83,7 +73,7 @@ export const useSync = (
                 // Update local state with the clean version (no isPendingSync)
                 setCloudNotes(notesToUpload);
             } else {
-                // No changes to upload, but we might have received updates from Gist
+                // No changes to upload, just update local state to match Gist (Mirror)
                 setCloudNotes(mergedNotes);
             }
 
@@ -96,7 +86,7 @@ export const useSync = (
         } finally {
             isSyncingRef.current = false;
         }
-    }, [effectiveSettings, isCloudConfigured, setCloudNotes, migrateNotes]);
+    }, [effectiveSettings, isCloudConfigured, setCloudNotes, migrateNotes, recentlyPermanentlyDeletedIds]);
 
     // Automatic background sync
     useEffect(() => {
@@ -111,7 +101,7 @@ export const useSync = (
         // Set up interval for background sync
         const intervalId = setInterval(() => {
             doSync();
-        }, 60000); // Poll every 60 seconds
+        }, 5000); // Poll every 5 seconds
 
         return () => clearInterval(intervalId);
         // eslint-disable-next-line react-hooks/exhaustive-deps
