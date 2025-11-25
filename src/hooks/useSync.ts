@@ -1,6 +1,19 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Note, GithubGistSettings } from '../types';
+import { Note, GithubGistSettings, ListItem, NoteType } from '../types';
 import { getGistContent, updateGistContent } from '../services/githubService';
+
+// Helper to merge two lists of items
+const mergeLists = (remoteItems: ListItem[], localItems: ListItem[]): ListItem[] => {
+    const itemsMap = new Map<string, ListItem>();
+
+    // 1. Add all remote items
+    remoteItems.forEach(item => itemsMap.set(item.id, item));
+
+    // 2. Overlay local items (updates existing, adds new)
+    localItems.forEach(item => itemsMap.set(item.id, item));
+
+    return Array.from(itemsMap.values());
+};
 
 export const useSync = (
     effectiveSettings: GithubGistSettings,
@@ -52,9 +65,25 @@ export const useSync = (
             // Everything else in local state that is NOT in Gist is considered "deleted remotely" and ignored (dropped).
             cloudNotesRef.current.forEach(localNote => {
                 if (localNote.isPendingSync) {
-                    // This is a local change waiting to be uploaded.
-                    // It takes precedence over Gist (or adds to it if new).
-                    mergedNotesMap.set(localNote.id, localNote);
+                    // Check for smart merge opportunity (Shopping Lists)
+                    const remoteNote = mergedNotesMap.get(localNote.id);
+
+                    if (remoteNote &&
+                        localNote.noteType === NoteType.ShoppingList &&
+                        Array.isArray(localNote.content) &&
+                        Array.isArray(remoteNote.content)) {
+
+                        // Perform Smart Merge
+                        const mergedContent = mergeLists(remoteNote.content as ListItem[], localNote.content as ListItem[]);
+                        const mergedNote = { ...localNote, content: mergedContent };
+                        mergedNotesMap.set(localNote.id, mergedNote);
+
+                    } else {
+                        // Standard overwrite (Local wins)
+                        // This is a local change waiting to be uploaded.
+                        // It takes precedence over Gist (or adds to it if new).
+                        mergedNotesMap.set(localNote.id, localNote);
+                    }
                     hasChangesToUpload = true;
                 }
             });
