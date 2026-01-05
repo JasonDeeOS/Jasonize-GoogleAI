@@ -1,10 +1,11 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Note, NoteType } from '../types';
 import useLocalStorage from './useLocalStorage';
 
-export const useNotes = (isCloudConfigured: boolean, syncCloudNotes: () => void) => {
+export const useNotes = (isCloudConfigured: boolean) => {
     const [localNotes, setLocalNotes] = useLocalStorage<Note[]>('local-notes', []);
     const [cloudNotes, setCloudNotes] = useLocalStorage<Note[]>('cloud-notes', []);
+    const cloudNotesRef = useRef(cloudNotes);
 
     // Animation states
     const [deletingNoteIds, setDeletingNoteIds] = useState(new Set<string>());
@@ -23,8 +24,14 @@ export const useNotes = (isCloudConfigured: boolean, syncCloudNotes: () => void)
             if (note.deletedAt === undefined) {
                 migratedNote.deletedAt = null;
             }
-            if (!note.tags) {
-                migratedNote.tags = [];
+            if (migratedNote.noteType === NoteType.ShoppingList && Array.isArray(migratedNote.content)) {
+                migratedNote.content = migratedNote.content.filter((item: any) => {
+                    const category = item?.category ?? 'Sonstiges';
+                    return category !== 'Sonstiges';
+                });
+            }
+            if (migratedNote.isPinned !== undefined) {
+                delete migratedNote.isPinned;
             }
             return migratedNote;
         });
@@ -35,22 +42,22 @@ export const useNotes = (isCloudConfigured: boolean, syncCloudNotes: () => void)
         setCloudNotes(prev => migrateNotes(prev));
     }, []);
 
+    useEffect(() => {
+        cloudNotesRef.current = cloudNotes;
+    }, [cloudNotes]);
+
     const handleSaveNote = (note: Note, location: 'local' | 'cloud', isUpdating: boolean) => {
         if (location === 'local') {
             setLocalNotes(prev => isUpdating ? prev.map(n => n.id === note.id ? note : n) : [...prev, note]);
             if (isUpdating) setUpdatedNoteId(note.id);
         } else if (location === 'cloud') {
             const noteWithPendingState = { ...note, isPendingSync: true };
-            const newCloudNotes = isUpdating
-                ? cloudNotes.map(n => (n.id === note.id ? noteWithPendingState : n))
-                : [...cloudNotes, noteWithPendingState];
-
-            setCloudNotes(newCloudNotes);
+            setCloudNotes(prev => isUpdating
+                ? prev.map(n => (n.id === note.id ? noteWithPendingState : n))
+                : [...prev, noteWithPendingState]
+            );
             if (isUpdating) setUpdatedNoteId(note.id);
 
-            if (isCloudConfigured) {
-                syncCloudNotes();
-            }
         }
     };
 
@@ -60,9 +67,6 @@ export const useNotes = (isCloudConfigured: boolean, syncCloudNotes: () => void)
             setLocalNotes(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt: now, updatedAt: now } : n));
         } else if (location === 'cloud') {
             setCloudNotes(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt: now, updatedAt: now, isPendingSync: true } : n));
-            if (isCloudConfigured) {
-                syncCloudNotes();
-            }
         }
     };
 
@@ -72,9 +76,6 @@ export const useNotes = (isCloudConfigured: boolean, syncCloudNotes: () => void)
             setLocalNotes(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt: null, updatedAt: now } : n));
         } else if (location === 'cloud') {
             setCloudNotes(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt: null, updatedAt: now, isPendingSync: true } : n));
-            if (isCloudConfigured) {
-                syncCloudNotes();
-            }
         }
     };
 
@@ -90,7 +91,7 @@ export const useNotes = (isCloudConfigured: boolean, syncCloudNotes: () => void)
             // Track this ID as permanently deleted
             setRecentlyPermanentlyDeletedIds(prev => new Set(prev).add(noteId));
 
-            const newCloudNotes = cloudNotes.filter(n => n.id !== noteId);
+            const newCloudNotes = cloudNotesRef.current.filter(n => n.id !== noteId);
             try {
                 await updateGistContent(newCloudNotes);
                 setCloudNotes(newCloudNotes);
@@ -127,8 +128,8 @@ export const useNotes = (isCloudConfigured: boolean, syncCloudNotes: () => void)
 
         // Empty cloud trash
         if (isCloudConfigured) {
-            const notesToDelete = cloudNotes.filter(n => n.deletedAt);
-            const newCloudNotes = cloudNotes.filter(n => !n.deletedAt);
+            const notesToDelete = cloudNotesRef.current.filter(n => n.deletedAt);
+            const newCloudNotes = cloudNotesRef.current.filter(n => !n.deletedAt);
 
             // Track all deleted IDs
             setRecentlyPermanentlyDeletedIds(prev => {

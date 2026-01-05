@@ -18,7 +18,6 @@ import PlusIcon from './components/icons/PlusIcon';
 import SyncIcon from './components/icons/SyncIcon';
 import SunIcon from './components/icons/SunIcon';
 import MoonIcon from './components/icons/MoonIcon';
-import SearchIcon from './components/icons/SearchIcon';
 
 // --- Fallback-Konfiguration für Entwicklung ---
 const DEV_FALLBACK_SETTINGS: GithubGistSettings = {
@@ -31,7 +30,6 @@ const App: React.FC = () => {
   const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('theme', 'dark');
 
   const isCloudConfigured = !!(settings.gistId && settings.token);
-  const syncCloudNotesRef = useRef<() => Promise<void>>(async () => { });
   const isConfiguringRef = useRef(false);
 
   const {
@@ -52,7 +50,7 @@ const App: React.FC = () => {
     updatedNoteId,
     migrateNotes,
     recentlyPermanentlyDeletedIds
-  } = useNotes(isCloudConfigured, () => syncCloudNotesRef.current());
+  } = useNotes(isCloudConfigured);
 
   const effectiveSettings = settings.gistId && settings.token ? settings : DEV_FALLBACK_SETTINGS;
 
@@ -64,10 +62,6 @@ const App: React.FC = () => {
     syncCloudNotes,
     updateGistContent
   } = useSync(effectiveSettings, isCloudConfigured, cloudNotes, setCloudNotes, migrateNotes, recentlyPermanentlyDeletedIds);
-
-  useEffect(() => {
-    syncCloudNotesRef.current = syncCloudNotes;
-  }, [syncCloudNotes]);
 
   useEffect(() => {
     if (isConfiguringRef.current) {
@@ -95,9 +89,6 @@ const App: React.FC = () => {
   const [newNoteConfig, setNewNoteConfig] = useState<{ type: NoteType; location: 'local' | 'cloud' } | null>(null);
   const [pendingDelete, setPendingDelete] = useState<{ id: string; location: 'local' | 'cloud' } | null>(null);
 
-  // Search & Filter States
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterTag, setFilterTag] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'local' | 'cloud'>('all');
 
   useEffect(() => {
@@ -204,16 +195,6 @@ const App: React.FC = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   };
 
-  // Filter Logic
-  const filterNotes = (notes: Note[]) => {
-    return notes.filter(note => {
-      const matchesSearch = note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (typeof note.content === 'string' && note.content.toLowerCase().includes(searchQuery.toLowerCase()));
-      const matchesTag = filterTag ? note.tags?.includes(filterTag) : true;
-      return matchesSearch && matchesTag;
-    });
-  };
-
   const displayedNotes = useMemo(() => {
     let notes: Note[] = [];
     if (activeTab === 'all') {
@@ -225,18 +206,10 @@ const App: React.FC = () => {
     }
     // Sort by date desc
     notes.sort((a, b) => {
-      if (a.isPinned && !b.isPinned) return -1;
-      if (!a.isPinned && b.isPinned) return 1;
       return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
     });
-    return filterNotes(notes);
-  }, [activeTab, activeLocalNotes, activeCloudNotes, searchQuery, filterTag]);
-
-  const allTags = useMemo(() => {
-    const tags = new Set<string>();
-    allNotes.forEach(note => note.tags?.forEach(tag => tags.add(tag)));
-    return Array.from(tags);
-  }, [allNotes]);
+    return notes;
+  }, [activeTab, activeLocalNotes, activeCloudNotes]);
 
   const masonryBreakpointCols = {
     default: 4,
@@ -280,21 +253,8 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Search & Filter Bar */}
+          {/* Filter Bar */}
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="relative w-full md:w-96">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <SearchIcon className="h-5 w-5 text-on-background/50" />
-              </div>
-              <input
-                type="text"
-                placeholder="Suchen..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-on-background/10 rounded-md leading-5 bg-surface text-on-surface placeholder-on-background/50 focus:outline-none focus:ring-2 focus:ring-primary sm:text-sm transition-colors"
-              />
-            </div>
-
             <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto hide-scrollbar">
               <button
                 onClick={() => setActiveTab('all')}
@@ -314,16 +274,6 @@ const App: React.FC = () => {
               >
                 Cloud
               </button>
-              <div className="w-px h-6 bg-on-background/20 mx-2"></div>
-              {allTags.map(tag => (
-                <button
-                  key={tag}
-                  onClick={() => setFilterTag(filterTag === tag ? null : tag)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap border ${filterTag === tag ? 'bg-secondary text-on-secondary border-secondary' : 'bg-transparent text-on-background/70 border-on-background/20 hover:border-secondary'}`}
-                >
-                  #{tag}
-                </button>
-              ))}
             </div>
           </div>
         </div>

@@ -11,7 +11,6 @@ export interface ListItem {
   quantity?: string;
   notes?: string;
   category?: string;
-  price?: number;
 }
 
 export interface Note {
@@ -23,8 +22,6 @@ export interface Note {
   updatedAt: string;
   deletedAt?: string | null;
   isPendingSync?: boolean;
-  tags?: string[];
-  isPinned?: boolean;
   color?: string;
 }
 

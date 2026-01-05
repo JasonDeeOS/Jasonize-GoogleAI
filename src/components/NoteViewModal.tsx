@@ -49,20 +49,54 @@ const NoteViewModal: React.FC<NoteViewModalProps> = ({ isOpen, onClose, onEdit, 
     const updatedContent = (note.content as ListItem[]).map(item =>
       item.id === itemId ? { ...item, completed: !item.completed } : item
     );
-    const updatedNote = { ...note, content: updatedContent, updatedAt: new Date().toISOString() };
-    onUpdateNote(updatedNote);
-  };
+    if (note.noteType === NoteType.ShoppingList) {
+      const toggledItem = updatedContent.find(item => item.id === itemId);
+      const toggledCategory = toggledItem?.category || 'Sonstiges';
+      const groupedItems: Record<string, ListItem[]> = {};
+      const categoryOrder: string[] = [];
 
-  const handleAufraumen = () => {
-    if (note.noteType !== NoteType.ShoppingList && note.noteType !== NoteType.List) return;
+      updatedContent.forEach(item => {
+        const category = item.category || 'Sonstiges';
+        if (!groupedItems[category]) {
+          groupedItems[category] = [];
+          categoryOrder.push(category);
+        }
+        groupedItems[category].push(item);
+      });
 
-    const items = note.content as ListItem[];
-    const sortedItems = [...items].sort((a, b) => {
+      const stableSortByCompleted = (items: ListItem[]) => {
+        return items
+          .map((item, index) => ({ item, index }))
+          .sort((a, b) => {
+            if (a.item.completed === b.item.completed) return a.index - b.index;
+            return a.item.completed ? 1 : -1;
+          })
+          .map(entry => entry.item);
+      };
+
+      if (groupedItems[toggledCategory]) {
+        groupedItems[toggledCategory] = stableSortByCompleted(groupedItems[toggledCategory]);
+      }
+
+      const sortedContent = categoryOrder.flatMap(category => groupedItems[category]);
+      const updatedNote = { ...note, content: sortedContent, updatedAt: new Date().toISOString() };
+      onUpdateNote(updatedNote);
+      return;
+    }
+
+    const sortedContent = [...updatedContent].sort((a, b) => {
       if (a.completed === b.completed) return 0;
       return a.completed ? 1 : -1;
     });
+    const updatedNote = { ...note, content: sortedContent, updatedAt: new Date().toISOString() };
+    onUpdateNote(updatedNote);
+  };
 
-    const updatedNote = { ...note, content: sortedItems, updatedAt: new Date().toISOString() };
+  const handleDeleteCompletedItems = () => {
+    if (note.noteType !== NoteType.ShoppingList) return;
+    const items = note.content as ListItem[];
+    const remainingItems = items.filter(item => !item.completed);
+    const updatedNote = { ...note, content: remainingItems, updatedAt: new Date().toISOString() };
     onUpdateNote(updatedNote);
   };
 
@@ -81,22 +115,6 @@ const NoteViewModal: React.FC<NoteViewModalProps> = ({ isOpen, onClose, onEdit, 
     const updatedNote = { ...note, content: updatedContent, updatedAt: new Date().toISOString() };
     onUpdateNote(updatedNote);
   };
-
-  const handleShare = () => {
-    if (!note) return;
-    const listContent = Array.isArray(note.content) ? note.content : [];
-    const text = listContent.map(item =>
-      `${item.completed ? '[x]' : '[ ]'} ${item.text} ${item.quantity ? `(${item.quantity})` : ''}`
-    ).join('\n');
-    navigator.clipboard.writeText(text);
-    alert('Liste in die Zwischenablage kopiert!');
-  };
-
-  const handleTogglePin = () => {
-    if (!note) return;
-    onUpdateNote({ ...note, isPinned: !note.isPinned });
-  };
-
   const moveCategoryUp = (category: string, allCategories: string[]) => {
     const currentIndex = categorySortOrder.indexOf(category);
     if (currentIndex === -1) {
@@ -148,33 +166,25 @@ const NoteViewModal: React.FC<NoteViewModalProps> = ({ isOpen, onClose, onEdit, 
 
           // Sort categories based on saved order
           const allCategories = Object.keys(groupedItems);
-          const sortedCategories = categorySortOrder.length > 0
+          const sortedCategoriesBase = categorySortOrder.length > 0
             ? categorySortOrder.filter(cat => allCategories.includes(cat)).concat(
               allCategories.filter(cat => !categorySortOrder.includes(cat))
             )
             : allCategories;
+          const sortedCategories = sortedCategoriesBase.filter(cat => cat !== 'Sonstiges');
+          if (sortedCategoriesBase.includes('Sonstiges')) {
+            sortedCategories.push('Sonstiges');
+          }
 
           return (
             <>
-              <div className="mb-4 flex justify-end">
+              <div className="mb-4 flex justify-end gap-2">
                 <button
-                  onClick={handleAufraumen}
-                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium"
+                  onClick={handleDeleteCompletedItems}
+                  className="px-4 py-2 bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors font-medium"
                 >
-                  🧹 Aufräumen
+                  Gekaufte Artikel entfernen
                 </button>
-                <button
-                  onClick={handleShare}
-                  className="px-4 py-2 bg-secondary text-on-secondary rounded-lg hover:bg-secondary/90 transition-colors font-medium ml-2"
-                >
-                  📤 Teilen
-                </button>
-              </div>
-              <div className="mb-4 p-3 bg-primary/10 rounded-lg flex justify-between items-center">
-                <span className="font-semibold text-primary">Gesamtsumme:</span>
-                <span className="font-bold text-xl text-primary">
-                  {items.reduce((sum, item) => sum + (item.price || 0), 0).toFixed(2)} €
-                </span>
               </div>
               {sortedCategories.map((category, categoryIndex) => {
                 const categoryItems = groupedItems[category];
@@ -210,6 +220,7 @@ const NoteViewModal: React.FC<NoteViewModalProps> = ({ isOpen, onClose, onEdit, 
                             type="checkbox"
                             checked={item.completed}
                             onChange={() => handleToggleListItem(item.id)}
+                            onClick={(event) => event.stopPropagation()}
                             className="mt-1 h-5 w-5 rounded text-primary bg-surface border-on-background/30 focus:ring-primary cursor-pointer flex-shrink-0"
                           />
                           <div className="flex-1 min-w-0">
@@ -243,11 +254,6 @@ const NoteViewModal: React.FC<NoteViewModalProps> = ({ isOpen, onClose, onEdit, 
                               </button>
                             </div>
                           )}
-                          {item.price && (
-                            <span className="text-sm font-medium text-on-background/70 ml-2 min-w-[3rem] text-right">
-                              {item.price.toFixed(2)} €
-                            </span>
-                          )}
                         </li>
                       ))}
                     </ul>
@@ -260,20 +266,12 @@ const NoteViewModal: React.FC<NoteViewModalProps> = ({ isOpen, onClose, onEdit, 
 
         return (
           <>
-            {note.noteType === NoteType.List && (
-              <div className="mb-4 flex justify-end">
-                <button
-                  onClick={handleAufraumen}
-                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium"
-                >
-                  🧹 Aufräumen
-                </button>
-              </div>
-            )}
+            
             <ul className="space-y-2">
               {items.map(item => (
                 <li key={item.id} className="flex items-center">
-                  <input type="checkbox" checked={item.completed} onChange={() => handleToggleListItem(item.id)} className="h-5 w-5 rounded text-primary bg-surface border-on-background/30 focus:ring-primary cursor-pointer" />
+                  <input type="checkbox" checked={item.completed} onChange={() => handleToggleListItem(item.id)}
+                            onClick={(event) => event.stopPropagation()} className="h-5 w-5 rounded text-primary bg-surface border-on-background/30 focus:ring-primary cursor-pointer" />
                   <span className={`ml-3 ${item.completed ? 'line-through text-on-background/50' : ''}`}>{item.text}</span>
                 </li>
               ))}
@@ -302,9 +300,6 @@ const NoteViewModal: React.FC<NoteViewModalProps> = ({ isOpen, onClose, onEdit, 
                 <CloudUploadIcon />
               </button>
             )}
-            <button onClick={handleTogglePin} className={`p-2 rounded-full transition-colors ${note.isPinned ? 'bg-primary/20 text-primary' : 'hover:bg-on-background/20 text-on-surface/50'}`} aria-label={note.isPinned ? "Lösen" : "Anpinnen"}>
-              📌
-            </button>
             <button onClick={onEdit} className="p-2 rounded-full hover:bg-on-background/20 transition-colors" aria-label="Bearbeiten"><EditIcon /></button>
             <button onClick={handleDelete} className="p-2 rounded-full hover:bg-danger/20 text-danger transition-colors" aria-label="Löschen"><TrashIcon className="w-5 h-5" /></button>
             <button onClick={onClose} className="p-2 rounded-full hover:bg-on-background/20 transition-colors" aria-label="Schließen"><CloseIcon /></button>
@@ -319,3 +314,6 @@ const NoteViewModal: React.FC<NoteViewModalProps> = ({ isOpen, onClose, onEdit, 
 };
 
 export default NoteViewModal;
+
+
+

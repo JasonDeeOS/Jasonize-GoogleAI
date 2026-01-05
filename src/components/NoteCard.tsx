@@ -100,15 +100,6 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onView, onDelete, onRestore, 
           {renderContentPreview()}
         </div>
 
-        {note.tags && note.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            {note.tags.map(tag => (
-              <span key={tag} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
 
       <p className="text-xs text-on-background/50 mt-auto flex justify-between items-center">

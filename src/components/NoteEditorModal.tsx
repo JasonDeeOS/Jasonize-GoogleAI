@@ -34,14 +34,16 @@ const highlightMatch = (text: string, query: string) => {
 };
 
 const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSave, noteToEdit, noteType, allNotes }) => {
+  const defaultCategory = SHOPPING_CATEGORIES.find(cat => cat !== 'Sonstiges') || 'Sonstiges';
   const [title, setTitle] = useState('');
   const [content, setContent] = useState<string | ListItem[]>('');
-  const [tags, setTags] = useState<string[]>([]);
   const [color, setColor] = useState<string | undefined>(undefined);
 
   const frequentlyBought = useShoppingHistory(allNotes);
   const [quickAddItemText, setQuickAddItemText] = useState('');
   const [frequentlyBoughtVisible, setFrequentlyBoughtVisible] = useState(true);
+  const [pendingItemName, setPendingItemName] = useState<string | null>(null);
+  const [pendingCategory, setPendingCategory] = useState(defaultCategory);
 
 
   useEffect(() => {
@@ -49,17 +51,17 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
       if (noteToEdit) {
         setTitle(noteToEdit.title);
         setContent(noteToEdit.content);
-        setTags(noteToEdit.tags || []);
         setColor(noteToEdit.color);
       } else {
         setTitle('');
         setContent(noteType === NoteType.Text ? '' : []);
-        setTags([]);
         setColor(undefined);
       }
       setQuickAddItemText('');
+      setPendingItemName(null);
+      setPendingCategory(defaultCategory);
     }
-  }, [isOpen, noteToEdit, noteType]);
+  }, [isOpen, noteToEdit, noteType, defaultCategory]);
 
   const filteredSuggestions = useMemo(() => {
     if (quickAddItemText.length < 2) {
@@ -137,7 +139,15 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
       return;
     }
 
-    const itemCategory = category || COMMON_GROCERY_ITEMS.find(i => i.name.toLowerCase() === trimmedName.toLowerCase())?.category || 'Sonstiges';
+    const matchedCategory = COMMON_GROCERY_ITEMS.find(i => i.name.toLowerCase() === trimmedName.toLowerCase())?.category;
+    if (!category && !matchedCategory) {
+      setPendingItemName(trimmedName);
+      setPendingCategory(defaultCategory);
+      setQuickAddItemText('');
+      return;
+    }
+
+    const itemCategory = category || matchedCategory || 'Sonstiges';
     const newItem: ListItem = {
       id: Date.now().toString(),
       text: trimmedName,
@@ -148,6 +158,24 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
     };
     setContent(c => [...(Array.isArray(c) ? c : []), newItem]);
     setQuickAddItemText('');
+  };
+
+  const handleConfirmCategory = () => {
+    if (!pendingItemName) return;
+    const newItem: ListItem = {
+      id: Date.now().toString(),
+      text: pendingItemName,
+      completed: false,
+      quantity: '',
+      notes: '',
+      category: pendingCategory
+    };
+    setContent(c => [...(Array.isArray(c) ? c : []), newItem]);
+    setPendingItemName(null);
+  };
+
+  const handleCancelCategory = () => {
+    setPendingItemName(null);
   };
 
   const handleSuggestionClick = (suggestion: { name: string; category: string }) => {
@@ -168,7 +196,6 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
       title: title.trim(),
       noteType: noteToEdit?.noteType || noteType,
       content,
-      tags,
       color,
       createdAt: noteToEdit?.createdAt || now,
       updatedAt: now,
@@ -283,8 +310,38 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
                   placeholder="Artikel hinzufügen..."
                   className="w-full bg-transparent text-on-background placeholder-on-background/50 focus:ring-0 border-0 outline-none"
                 />
-              </div>
-              {filteredSuggestions.length > 0 && (
+                </div>
+                {pendingItemName && (
+                  <div className="mt-2 p-3 rounded-lg border border-on-background/20 bg-surface">
+                    <div className="text-sm text-on-background/80 mb-2">
+                      Kategorie fuer "{pendingItemName}" auswaehlen
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <select
+                        value={pendingCategory}
+                        onChange={(e) => setPendingCategory(e.target.value)}
+                        className="bg-background border border-on-background/20 rounded-md px-2 py-1 text-sm text-on-background"
+                      >
+                        {SHOPPING_CATEGORIES.map(cat => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={handleConfirmCategory}
+                        className="px-3 py-1 text-sm rounded-md bg-primary text-on-primary hover:bg-primary-variant transition-colors"
+                      >
+                        Hinzufuegen
+                      </button>
+                      <button
+                        onClick={handleCancelCategory}
+                        className="px-3 py-1 text-sm rounded-md border border-on-background/20 text-on-background hover:bg-on-background/10 transition-colors"
+                      >
+                        Abbrechen
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {filteredSuggestions.length > 0 && (
                 <div className="absolute z-10 w-full bg-surface border border-on-background/20 rounded-b-lg shadow-lg mt-1">
                   {filteredSuggestions.map(s => (
                     <div key={s.name} onClick={() => handleSuggestionClick(s)} className="p-3 hover:bg-primary/20 cursor-pointer">
@@ -328,9 +385,7 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
                               <span className="text-on-background/30 cursor-grab active:cursor-grabbing select-none">⋮⋮</span>
                               <input type="text" value={item.text} onChange={e => updateListItem(item.id, { text: e.target.value })} placeholder="Artikelname" className="flex-grow bg-transparent p-1 text-on-background font-semibold focus:ring-0 focus:border-primary border-0 border-b border-on-background/20 outline-none" />
                               <div className="flex items-center gap-2">
-                                <input type="number" value={item.price || ''} onChange={e => updateListItem(item.id, { price: parseFloat(e.target.value) })} placeholder="€" className="w-16 bg-on-background/10 rounded-sm p-1 text-sm text-on-background/80 placeholder-on-background/50 focus:ring-1 focus:ring-primary outline-none text-right" />
                                 <input type="text" value={item.quantity || ''} onChange={e => updateListItem(item.id, { quantity: e.target.value })} placeholder="Menge" className="w-20 bg-on-background/10 rounded-sm p-1 text-sm text-on-background/80 placeholder-on-background/50 focus:ring-1 focus:ring-primary outline-none" />
-                                <input type="text" value={item.notes || ''} onChange={e => updateListItem(item.id, { notes: e.target.value })} placeholder="Notiz" className="w-24 bg-on-background/10 rounded-sm p-1 text-sm text-on-background/80 placeholder-on-background/50 focus:ring-1 focus:ring-primary outline-none" />
                                 <button onClick={() => removeListItem(item.id)} className="p-2 text-on-surface/60 hover:text-danger"><TrashIcon className="w-4 h-4" /></button>
                               </div>
                             </div>
@@ -346,9 +401,6 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
             <datalist id="categories">
               {SHOPPING_CATEGORIES.map(cat => <option key={cat} value={cat} />)}
             </datalist>
-            <button onClick={() => addListItem()} className="mt-4 px-3 py-1.5 rounded-md border-2 border-dashed border-primary/50 text-primary hover:bg-primary/10 transition-colors">
-              Leeren Eintrag hinzufügen
-            </button>
           </div>
         );
       default:
@@ -379,17 +431,6 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Titel der Notiz"
               className="w-full bg-transparent text-xl font-semibold p-2 text-on-background focus:ring-0 focus:border-primary border-0 border-b-2 border-on-background/20 outline-none transition-colors"
-            />
-          </div>
-          <div>
-            <label htmlFor="noteTags" className="sr-only">Tags</label>
-            <input
-              id="noteTags"
-              type="text"
-              value={tags.join(', ')}
-              onChange={(e) => setTags(e.target.value.split(',').map(t => t.trim()).filter(t => t))}
-              placeholder="Tags (kommagetrennt)"
-              className="w-full bg-transparent text-sm p-2 text-on-background/70 focus:ring-0 focus:border-primary border-0 border-b border-on-background/10 outline-none transition-colors"
             />
           </div>
           {renderContentEditor()}
