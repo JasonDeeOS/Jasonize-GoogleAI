@@ -10,6 +10,8 @@ export const useSync = (
     migrateNotes: (notes: any[]) => Note[],
     recentlyPermanentlyDeletedIds: Set<string>
 ) => {
+    const POLL_INTERVAL_MS = 3000;
+    const PENDING_DEBOUNCE_MS = 500;
     const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
     const [syncError, setSyncError] = useState<string | null>(null);
     const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
@@ -97,14 +99,38 @@ export const useSync = (
         const hasPendingChanges = cloudNotes.some(note => note.isPendingSync);
         if (!hasPendingChanges) return;
 
+        if (!isSyncingRef.current) {
+            syncCloudNotes();
+        }
         const timeoutId = setTimeout(() => {
             if (!isSyncingRef.current) {
                 syncCloudNotes();
             }
-        }, 300);
+        }, PENDING_DEBOUNCE_MS);
 
         return () => clearTimeout(timeoutId);
     }, [cloudNotes, isCloudConfigured, syncCloudNotes]);
+
+    useEffect(() => {
+        if (!isCloudConfigured) return;
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                syncCloudNotes();
+            }
+        };
+        const handleFocus = () => {
+            syncCloudNotes();
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('focus', handleFocus);
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('focus', handleFocus);
+        };
+    }, [isCloudConfigured, syncCloudNotes]);
 
     // Automatic background sync
     useEffect(() => {
@@ -119,7 +145,7 @@ export const useSync = (
         // Set up interval for background sync
         const intervalId = setInterval(() => {
             doSync();
-        }, 5000); // Poll every 5 seconds
+        }, POLL_INTERVAL_MS); // Poll periodically
 
         return () => clearInterval(intervalId);
         // eslint-disable-next-line react-hooks/exhaustive-deps

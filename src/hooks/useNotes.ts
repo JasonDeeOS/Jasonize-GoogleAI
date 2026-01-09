@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, SetStateAction } from 'react';
 import { Note, NoteType } from '../types';
 import useLocalStorage from './useLocalStorage';
 
@@ -37,14 +37,20 @@ export const useNotes = (isCloudConfigured: boolean) => {
         });
     };
 
-    useEffect(() => {
-        setLocalNotes(prev => migrateNotes(prev));
-        setCloudNotes(prev => migrateNotes(prev));
-    }, []);
+    const setCloudNotesWithRef = (updater: SetStateAction<Note[]>) => {
+        setCloudNotes(prev => {
+            const next = typeof updater === 'function'
+                ? (updater as (value: Note[]) => Note[])(prev)
+                : updater;
+            cloudNotesRef.current = next;
+            return next;
+        });
+    };
 
     useEffect(() => {
-        cloudNotesRef.current = cloudNotes;
-    }, [cloudNotes]);
+        setLocalNotes(prev => migrateNotes(prev));
+        setCloudNotesWithRef(prev => migrateNotes(prev));
+    }, []);
 
     const handleSaveNote = (note: Note, location: 'local' | 'cloud', isUpdating: boolean) => {
         if (location === 'local') {
@@ -52,7 +58,7 @@ export const useNotes = (isCloudConfigured: boolean) => {
             if (isUpdating) setUpdatedNoteId(note.id);
         } else if (location === 'cloud') {
             const noteWithPendingState = { ...note, isPendingSync: true };
-            setCloudNotes(prev => isUpdating
+            setCloudNotesWithRef(prev => isUpdating
                 ? prev.map(n => (n.id === note.id ? noteWithPendingState : n))
                 : [...prev, noteWithPendingState]
             );
@@ -66,7 +72,7 @@ export const useNotes = (isCloudConfigured: boolean) => {
         if (location === 'local') {
             setLocalNotes(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt: now, updatedAt: now } : n));
         } else if (location === 'cloud') {
-            setCloudNotes(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt: now, updatedAt: now, isPendingSync: true } : n));
+            setCloudNotesWithRef(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt: now, updatedAt: now, isPendingSync: true } : n));
         }
     };
 
@@ -75,7 +81,7 @@ export const useNotes = (isCloudConfigured: boolean) => {
         if (location === 'local') {
             setLocalNotes(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt: null, updatedAt: now } : n));
         } else if (location === 'cloud') {
-            setCloudNotes(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt: null, updatedAt: now, isPendingSync: true } : n));
+            setCloudNotesWithRef(prev => prev.map(n => n.id === noteId ? { ...n, deletedAt: null, updatedAt: now, isPendingSync: true } : n));
         }
     };
 
@@ -94,7 +100,7 @@ export const useNotes = (isCloudConfigured: boolean) => {
             const newCloudNotes = cloudNotesRef.current.filter(n => n.id !== noteId);
             try {
                 await updateGistContent(newCloudNotes);
-                setCloudNotes(newCloudNotes);
+                setCloudNotesWithRef(newCloudNotes);
             } catch (error) {
                 console.error("Fehler beim endgültigen Löschen der Cloud-Notiz:", error);
                 // Revert animation state if failed
@@ -112,7 +118,7 @@ export const useNotes = (isCloudConfigured: boolean) => {
                 throw error; // Re-throw to let caller handle it
             }
         } else if (location === 'cloud' && !isCloudConfigured) {
-            setCloudNotes(prev => prev.filter(n => n.id !== noteId));
+            setCloudNotesWithRef(prev => prev.filter(n => n.id !== noteId));
         }
 
         setDeletingNoteIds(prev => {
@@ -140,13 +146,13 @@ export const useNotes = (isCloudConfigured: boolean) => {
 
             try {
                 await updateGistContent(newCloudNotes);
-                setCloudNotes(newCloudNotes);
+                setCloudNotesWithRef(newCloudNotes);
             } catch (error) {
                 console.error("Fehler beim Leeren des Papierkorbs (Cloud):", error);
                 throw error;
             }
         } else {
-            setCloudNotes(prev => prev.filter(n => !n.deletedAt));
+            setCloudNotesWithRef(prev => prev.filter(n => !n.deletedAt));
         }
     };
 
@@ -160,7 +166,7 @@ export const useNotes = (isCloudConfigured: boolean) => {
         localNotes,
         setLocalNotes,
         cloudNotes,
-        setCloudNotes,
+        setCloudNotes: setCloudNotesWithRef,
         activeLocalNotes,
         deletedLocalNotes,
         activeCloudNotes,
