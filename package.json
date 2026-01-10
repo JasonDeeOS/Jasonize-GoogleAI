@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/bump-version.cjs",
     "build": "npx tsc && npx vite build",
     "preview": "vite preview"
   },
