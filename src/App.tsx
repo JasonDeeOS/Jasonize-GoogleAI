@@ -25,6 +25,8 @@ const DEV_FALLBACK_SETTINGS: GithubGistSettings = {
   token: '',
 };
 
+const MAX_CLOUD_NOTES = 10;
+
 const App: React.FC = () => {
   const [settings, setSettings] = useLocalStorage<GithubGistSettings>('gist-settings', { gistId: '', token: '' });
   const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('theme', 'dark');
@@ -49,7 +51,8 @@ const App: React.FC = () => {
     deletingNoteIds,
     updatedNoteId,
     migrateNotes,
-    recentlyPermanentlyDeletedIds
+    cloudTombstones,
+    setCloudTombstones
   } = useNotes(isCloudConfigured);
 
   const effectiveSettings = settings.gistId && settings.token ? settings : DEV_FALLBACK_SETTINGS;
@@ -59,9 +62,9 @@ const App: React.FC = () => {
     syncError,
     setSyncError,
     lastSyncTime,
-    syncCloudNotes,
-    updateGistContent
-  } = useSync(effectiveSettings, isCloudConfigured, cloudNotes, setCloudNotes, migrateNotes, recentlyPermanentlyDeletedIds);
+    syncSummary,
+    syncCloudNotes
+  } = useSync(effectiveSettings, isCloudConfigured, cloudNotes, setCloudNotes, cloudTombstones, setCloudTombstones, migrateNotes);
 
   useEffect(() => {
     if (isConfiguringRef.current) {
@@ -130,6 +133,11 @@ const App: React.FC = () => {
       return;
     }
 
+    if (location === 'cloud' && !isUpdating && activeCloudNotes.length >= MAX_CLOUD_NOTES) {
+      setToastMessage(`Maximal ${MAX_CLOUD_NOTES} Cloud-Notizen erlaubt.`);
+      return;
+    }
+
     handleSaveNote(note, location, isUpdating);
     setToastMessage(location === 'cloud' ? `Notiz "${note.title}" gespeichert. Synchronisierung gestartet...` : `Notiz "${note.title}" erfolgreich gespeichert.`);
   };
@@ -155,10 +163,14 @@ const App: React.FC = () => {
   const handleMoveNoteToCloud = (noteId: string) => {
     const noteToMove = localNotes.find(n => n.id === noteId);
     if (!noteToMove) return;
+    if (activeCloudNotes.length >= MAX_CLOUD_NOTES) {
+      setToastMessage(`Maximal ${MAX_CLOUD_NOTES} Cloud-Notizen erlaubt.`);
+      return;
+    }
     closeAllModals();
     handleDeleteNote(noteId, 'local');
-    handleSaveNote({ ...noteToMove, isPendingSync: true }, 'cloud', false);
-    handlePermanentDeleteNote(noteId, 'local', async () => { });
+    handleSaveNote(noteToMove, 'cloud', false);
+    handlePermanentDeleteNote(noteId, 'local');
 
     setToastMessage(`Notiz "${noteToMove.title}" wird in die Cloud verschoben.`);
   };
@@ -166,6 +178,14 @@ const App: React.FC = () => {
   const requestDeleteNote = (id: string, location: 'local' | 'cloud') => {
     setPendingDelete({ id, location });
     setConfirmModalOpen(true);
+  };
+
+  const handleRestoreNoteWrapper = (id: string, location: 'local' | 'cloud') => {
+    if (location === 'cloud' && activeCloudNotes.length >= MAX_CLOUD_NOTES) {
+      setToastMessage(`Maximal ${MAX_CLOUD_NOTES} Cloud-Notizen erlaubt.`);
+      return;
+    }
+    handleRestoreNote(id, location);
   };
 
   const handleConfirmAction = () => {
@@ -184,7 +204,8 @@ const App: React.FC = () => {
     setIsEmptyTrashConfirmOpen(false);
     setToastMessage("Papierkorb wird geleert...");
     try {
-      await handleEmptyTrash(updateGistContent);
+      await handleEmptyTrash();
+      syncCloudNotes();
       setToastMessage("Papierkorb erfolgreich geleert.");
     } catch (error) {
       setToastMessage("Fehler beim Leeren des Papierkorbs.");
@@ -231,6 +252,11 @@ const App: React.FC = () => {
                 {syncStatus === 'error' && <span className="text-danger">Fehler</span>}
               </div>
             </div>
+            {syncSummary && (
+              <div className="hidden md:block text-xs text-on-background/60">
+                {syncSummary}
+              </div>
+            )}
             <div className="flex items-center space-x-2 md:space-x-4">
               {isCloudConfigured && (
                 <button
@@ -333,8 +359,8 @@ const App: React.FC = () => {
                     note={note}
                     view='deleted'
                     location={deletedLocalNotes.some(n => n.id === note.id) ? 'local' : 'cloud'}
-                    onRestore={() => handleRestoreNote(note.id, deletedLocalNotes.some(n => n.id === note.id) ? 'local' : 'cloud')}
-                    onPermanentDelete={() => handlePermanentDeleteNote(note.id, deletedLocalNotes.some(n => n.id === note.id) ? 'local' : 'cloud', updateGistContent).catch(() => setToastMessage("Fehler beim Löschen der Notiz."))}
+                    onRestore={() => handleRestoreNoteWrapper(note.id, deletedLocalNotes.some(n => n.id === note.id) ? 'local' : 'cloud')}
+                    onPermanentDelete={() => handlePermanentDeleteNote(note.id, deletedLocalNotes.some(n => n.id === note.id) ? 'local' : 'cloud')}
                     isDeleting={deletingNoteIds.has(note.id)}
                   />
                 </div>

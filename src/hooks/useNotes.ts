@@ -1,21 +1,22 @@
 import { useState, useMemo, useEffect, useRef, SetStateAction } from 'react';
-import { Note, NoteType } from '../types';
+import { Note, NoteType, Tombstone } from '../types';
 import useLocalStorage from './useLocalStorage';
 
 export const useNotes = (isCloudConfigured: boolean) => {
     const [localNotes, setLocalNotes] = useLocalStorage<Note[]>('local-notes', []);
     const [cloudNotes, setCloudNotes] = useLocalStorage<Note[]>('cloud-notes', []);
+    const [cloudTombstones, setCloudTombstones] = useLocalStorage<Tombstone[]>('cloud-tombstones', []);
     const cloudNotesRef = useRef(cloudNotes);
+    const cloudTombstonesRef = useRef(cloudTombstones);
 
     // Animation states
     const [deletingNoteIds, setDeletingNoteIds] = useState(new Set<string>());
     const [updatedNoteId, setUpdatedNoteId] = useState<string | null>(null);
 
-    // Track IDs of notes that were permanently deleted in this session
-    // to prevent them from being re-added by sync (race condition)
-    const [recentlyPermanentlyDeletedIds, setRecentlyPermanentlyDeletedIds] = useState(new Set<string>());
-
-    const migrateNotes = (notes: any[]): Note[] => {
+    const migrateNotes = (notes: any): Note[] => {
+        if (!Array.isArray(notes)) {
+            return [];
+        }
         return notes.map(note => {
             let migratedNote = { ...note };
             if (!note.noteType) {
@@ -47,9 +48,20 @@ export const useNotes = (isCloudConfigured: boolean) => {
         });
     };
 
+    const setCloudTombstonesWithRef = (updater: SetStateAction<Tombstone[]>) => {
+        setCloudTombstones(prev => {
+            const next = typeof updater === 'function'
+                ? (updater as (value: Tombstone[]) => Tombstone[])(prev)
+                : updater;
+            cloudTombstonesRef.current = next;
+            return next;
+        });
+    };
+
     useEffect(() => {
         setLocalNotes(prev => migrateNotes(prev));
         setCloudNotesWithRef(prev => migrateNotes(prev));
+        setCloudTombstonesWithRef(prev => prev);
     }, []);
 
     const handleSaveNote = (note: Note, location: 'local' | 'cloud', isUpdating: boolean) => {
@@ -63,7 +75,6 @@ export const useNotes = (isCloudConfigured: boolean) => {
                 : [...prev, noteWithPendingState]
             );
             if (isUpdating) setUpdatedNoteId(note.id);
-
         }
     };
 
@@ -85,7 +96,7 @@ export const useNotes = (isCloudConfigured: boolean) => {
         }
     };
 
-    const handlePermanentDeleteNote = async (noteId: string, location: 'local' | 'cloud', updateGistContent: (notes: Note[]) => Promise<void>) => {
+    const handlePermanentDeleteNote = async (noteId: string, location: 'local' | 'cloud') => {
         setDeletingNoteIds(prev => new Set(prev).add(noteId));
 
         // Wait for animation
@@ -94,29 +105,11 @@ export const useNotes = (isCloudConfigured: boolean) => {
         if (location === 'local') {
             setLocalNotes(prev => prev.filter(n => n.id !== noteId));
         } else if (location === 'cloud' && isCloudConfigured) {
-            // Track this ID as permanently deleted
-            setRecentlyPermanentlyDeletedIds(prev => new Set(prev).add(noteId));
-
+            const now = new Date().toISOString();
             const newCloudNotes = cloudNotesRef.current.filter(n => n.id !== noteId);
-            try {
-                await updateGistContent(newCloudNotes);
-                setCloudNotesWithRef(newCloudNotes);
-            } catch (error) {
-                console.error("Fehler beim endgültigen Löschen der Cloud-Notiz:", error);
-                // Revert animation state if failed
-                setDeletingNoteIds(prev => {
-                    const next = new Set(prev);
-                    next.delete(noteId);
-                    return next;
-                });
-                // Also remove from tracked deleted IDs if it failed (optional, but good for consistency)
-                setRecentlyPermanentlyDeletedIds(prev => {
-                    const next = new Set(prev);
-                    next.delete(noteId);
-                    return next;
-                });
-                throw error; // Re-throw to let caller handle it
-            }
+            const tombstone: Tombstone = { id: noteId, deletedAt: now, updatedAt: now, isPendingSync: true };
+            setCloudNotesWithRef(newCloudNotes);
+            setCloudTombstonesWithRef(prev => [...prev.filter(t => t.id !== noteId), tombstone]);
         } else if (location === 'cloud' && !isCloudConfigured) {
             setCloudNotesWithRef(prev => prev.filter(n => n.id !== noteId));
         }
@@ -128,29 +121,26 @@ export const useNotes = (isCloudConfigured: boolean) => {
         });
     };
 
-    const handleEmptyTrash = async (updateGistContent: (notes: Note[]) => Promise<void>) => {
+    const handleEmptyTrash = async () => {
         // Empty local trash
         setLocalNotes(prev => prev.filter(n => !n.deletedAt));
 
         // Empty cloud trash
         if (isCloudConfigured) {
+            const now = new Date().toISOString();
             const notesToDelete = cloudNotesRef.current.filter(n => n.deletedAt);
             const newCloudNotes = cloudNotesRef.current.filter(n => !n.deletedAt);
-
-            // Track all deleted IDs
-            setRecentlyPermanentlyDeletedIds(prev => {
-                const next = new Set(prev);
-                notesToDelete.forEach(n => next.add(n.id));
-                return next;
+            const newTombstones = notesToDelete.map(note => ({
+                id: note.id,
+                deletedAt: now,
+                updatedAt: now,
+                isPendingSync: true
+            }));
+            setCloudNotesWithRef(newCloudNotes);
+            setCloudTombstonesWithRef(prev => {
+                const kept = prev.filter(t => !notesToDelete.some(n => n.id === t.id));
+                return [...kept, ...newTombstones];
             });
-
-            try {
-                await updateGistContent(newCloudNotes);
-                setCloudNotesWithRef(newCloudNotes);
-            } catch (error) {
-                console.error("Fehler beim Leeren des Papierkorbs (Cloud):", error);
-                throw error;
-            }
         } else {
             setCloudNotesWithRef(prev => prev.filter(n => !n.deletedAt));
         }
@@ -181,6 +171,7 @@ export const useNotes = (isCloudConfigured: boolean) => {
         updatedNoteId,
         setUpdatedNoteId,
         migrateNotes,
-        recentlyPermanentlyDeletedIds // Expose this
+        cloudTombstones,
+        setCloudTombstones: setCloudTombstonesWithRef
     };
 };
