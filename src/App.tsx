@@ -18,6 +18,7 @@ import PlusIcon from './components/icons/PlusIcon';
 import SyncIcon from './components/icons/SyncIcon';
 import SunIcon from './components/icons/SunIcon';
 import MoonIcon from './components/icons/MoonIcon';
+import packageJson from '../package.json';
 
 // --- Fallback-Konfiguration für Entwicklung ---
 const DEV_FALLBACK_SETTINGS: GithubGistSettings = {
@@ -26,6 +27,7 @@ const DEV_FALLBACK_SETTINGS: GithubGistSettings = {
 };
 
 const MAX_CLOUD_NOTES = 10;
+const APP_VERSION = packageJson.version;
 
 const App: React.FC = () => {
   const [settings, setSettings] = useLocalStorage<GithubGistSettings>('gist-settings', { gistId: '', token: '' });
@@ -63,6 +65,7 @@ const App: React.FC = () => {
     setSyncError,
     lastSyncTime,
     syncSummary,
+    nextSyncIn,
     syncCloudNotes
   } = useSync(effectiveSettings, isCloudConfigured, cloudNotes, setCloudNotes, cloudTombstones, setCloudTombstones, migrateNotes);
 
@@ -243,20 +246,10 @@ const App: React.FC = () => {
     <div className="min-h-screen font-sans pb-24 bg-background text-on-background transition-colors duration-300">
       <header className="sticky top-0 bg-surface/80 backdrop-blur-sm shadow-md z-10 transition-colors duration-300">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex justify-between items-center mb-3">
+          <div className="flex justify-between items-center mb-3 relative">
             <div className="flex items-center space-x-3">
               <h1 className="text-xl md:text-2xl font-bold text-on-surface">Notizen</h1>
-              <div className="text-xs pt-1 hidden sm:block">
-                {syncStatus === 'syncing' && <span className="text-yellow-400">Synchronisiere...</span>}
-                {syncStatus === 'synced' && <span className="text-green-400">Synchronisiert</span>}
-                {syncStatus === 'error' && <span className="text-danger">Fehler</span>}
-              </div>
             </div>
-            {syncSummary && (
-              <div className="hidden md:block text-xs text-on-background/60">
-                {syncSummary}
-              </div>
-            )}
             <div className="flex items-center space-x-2 md:space-x-4">
               {isCloudConfigured && (
                 <button
@@ -266,10 +259,12 @@ const App: React.FC = () => {
                   title="Synchronisieren"
                 >
                   <SyncIcon className={syncStatus === 'syncing' ? 'animate-spin' : ''} />
-                  <span className={`absolute top-1 right-1 block h-2.5 w-2.5 rounded-full ring-2 ring-surface ${syncStatus === 'synced' ? 'bg-green-400' :
-                    syncStatus === 'syncing' ? 'bg-yellow-400' :
-                      syncStatus === 'error' ? 'bg-red-500' : 'bg-gray-400'
-                    }`} />
+                  <span className={`absolute top-1 right-1 min-w-[1.25rem] px-1 py-0.5 rounded-full ring-2 ring-surface text-[10px] font-semibold text-white ${syncStatus === 'synced' ? 'bg-green-500' :
+                    syncStatus === 'syncing' ? 'bg-yellow-500' :
+                      syncStatus === 'error' ? 'bg-red-500' : 'bg-gray-500'
+                    }`}>
+                    {nextSyncIn ?? '--'}
+                  </span>
                 </button>
               )}
               <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-on-background/10 transition-colors">
@@ -278,6 +273,7 @@ const App: React.FC = () => {
               <button onClick={() => setSettingsModalOpen(true)} className="p-2 rounded-full hover:bg-on-background/10 transition-colors"><CogIcon /></button>
             </div>
           </div>
+          <span className="absolute top-2 right-2 text-xs text-on-background/60 select-none">v{APP_VERSION}</span>
 
           {/* Filter Bar */}
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -392,6 +388,10 @@ const App: React.FC = () => {
           }
         }}
         initialSettings={settings}
+        syncStatus={syncStatus}
+        syncError={syncError}
+        lastSyncTime={lastSyncTime}
+        syncSummary={syncSummary}
       />
 
       <NewNoteTypeModal

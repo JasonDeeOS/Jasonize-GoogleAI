@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, SetStateAction } from 'react';
+import { useState, useMemo, useEffect, useRef, SetStateAction, useCallback } from 'react';
 import { Note, NoteType, Tombstone } from '../types';
 import useLocalStorage from './useLocalStorage';
 
@@ -13,7 +13,7 @@ export const useNotes = (isCloudConfigured: boolean) => {
     const [deletingNoteIds, setDeletingNoteIds] = useState(new Set<string>());
     const [updatedNoteId, setUpdatedNoteId] = useState<string | null>(null);
 
-    const migrateNotes = (notes: any): Note[] => {
+    const migrateNotes = useCallback((notes: any): Note[] => {
         if (!Array.isArray(notes)) {
             return [];
         }
@@ -43,9 +43,9 @@ export const useNotes = (isCloudConfigured: boolean) => {
             }
             return migratedNote;
         });
-    };
+    }, []);
 
-    const setCloudNotesWithRef = (updater: SetStateAction<Note[]>) => {
+    const setCloudNotesWithRef = useCallback((updater: SetStateAction<Note[]>) => {
         setCloudNotes(prev => {
             const next = typeof updater === 'function'
                 ? (updater as (value: Note[]) => Note[])(prev)
@@ -53,9 +53,9 @@ export const useNotes = (isCloudConfigured: boolean) => {
             cloudNotesRef.current = next;
             return next;
         });
-    };
+    }, [setCloudNotes]);
 
-    const setCloudTombstonesWithRef = (updater: SetStateAction<Tombstone[]>) => {
+    const setCloudTombstonesWithRef = useCallback((updater: SetStateAction<Tombstone[]>) => {
         setCloudTombstones(prev => {
             const next = typeof updater === 'function'
                 ? (updater as (value: Tombstone[]) => Tombstone[])(prev)
@@ -63,7 +63,7 @@ export const useNotes = (isCloudConfigured: boolean) => {
             cloudTombstonesRef.current = next;
             return next;
         });
-    };
+    }, [setCloudTombstones]);
 
     useEffect(() => {
         setLocalNotes(prev => migrateNotes(prev));

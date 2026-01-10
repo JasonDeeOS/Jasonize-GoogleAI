@@ -139,9 +139,11 @@ export const useSync = (
     const [syncError, setSyncError] = useState<string | null>(null);
     const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
     const [syncSummary, setSyncSummary] = useState<string | null>(null);
+    const [nextSyncIn, setNextSyncIn] = useState<number | null>(null);
     const isSyncingRef = useRef(false);
     const cloudNotesRef = useRef<Note[]>(cloudNotes);
     const cloudTombstonesRef = useRef<Tombstone[]>(cloudTombstones);
+    const nextSyncAtRef = useRef<number | null>(null);
 
     // Keep refs in sync with local state
     useEffect(() => {
@@ -200,6 +202,10 @@ export const useSync = (
             setSyncSummary(null);
         } finally {
             isSyncingRef.current = false;
+            if (isCloudConfigured) {
+                nextSyncAtRef.current = Date.now() + POLL_INTERVAL_MS;
+                setNextSyncIn(Math.ceil(POLL_INTERVAL_MS / 1000));
+            }
         }
     }, [effectiveSettings, isCloudConfigured, setCloudNotes, setCloudTombstones, migrateNotes]);
 
@@ -247,13 +253,25 @@ export const useSync = (
         const doSync = async () => {
             await syncCloudNotes();
         };
+        nextSyncAtRef.current = Date.now() + POLL_INTERVAL_MS;
+        setNextSyncIn(Math.ceil(POLL_INTERVAL_MS / 1000));
         doSync();
 
         const intervalId = setInterval(() => {
             doSync();
+            nextSyncAtRef.current = Date.now() + POLL_INTERVAL_MS;
         }, POLL_INTERVAL_MS);
 
-        return () => clearInterval(intervalId);
+        const countdownId = setInterval(() => {
+            if (!nextSyncAtRef.current) return;
+            const remainingMs = Math.max(0, nextSyncAtRef.current - Date.now());
+            setNextSyncIn(Math.ceil(remainingMs / 1000));
+        }, 1000);
+
+        return () => {
+            clearInterval(intervalId);
+            clearInterval(countdownId);
+        };
     }, [isCloudConfigured, syncCloudNotes]);
 
     return {
@@ -264,6 +282,7 @@ export const useSync = (
         lastSyncTime,
         setLastSyncTime,
         syncSummary,
+        nextSyncIn,
         syncCloudNotes,
         updateGistContent: (data: GistData) => updateGistContent(effectiveSettings, data)
     };

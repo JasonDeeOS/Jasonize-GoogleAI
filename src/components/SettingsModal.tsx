@@ -7,9 +7,13 @@ interface SettingsModalProps {
   onClose: () => void;
   onSave: (settings: GithubGistSettings) => void;
   initialSettings: GithubGistSettings;
+  syncStatus: 'idle' | 'syncing' | 'synced' | 'error';
+  syncError: string | null;
+  lastSyncTime: string | null;
+  syncSummary: string | null;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSave, initialSettings }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSave, initialSettings, syncStatus, syncError, lastSyncTime, syncSummary }) => {
   const [gistId, setGistId] = useState(initialSettings.gistId || '');
   const [token, setToken] = useState(initialSettings.token || '');
 
@@ -58,6 +62,33 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSave, 
             />
             <p className="text-xs text-on-background/60 mt-1">Ihr Token wird nur in Ihrem Browser gespeichert und benötigt die `gist`-Berechtigung.</p>
           </div>
+        </div>
+
+        <div className="mt-6 border-t border-on-background/10 pt-4 space-y-2 text-sm text-on-background/70">
+          <div>
+            <span className="font-semibold text-on-background/80">Sync-Status: </span>
+            {syncStatus === 'syncing' && <span className="text-yellow-400">Synchronisiere...</span>}
+            {syncStatus === 'synced' && <span className="text-green-400">Synchronisiert</span>}
+            {syncStatus === 'error' && <span className="text-danger">Fehler</span>}
+            {syncStatus === 'idle' && <span>Idle</span>}
+          </div>
+          {lastSyncTime && (
+            <div>
+              <span className="font-semibold text-on-background/80">Letzter Sync: </span>
+              <span>{lastSyncTime}</span>
+            </div>
+          )}
+          {syncError && (
+            <div className="text-danger">
+              <span className="font-semibold">Fehler: </span>
+              <span>{syncError}</span>
+            </div>
+          )}
+          {syncSummary && (
+            <div className="text-xs text-on-background/60">
+              {syncSummary}
+            </div>
+          )}
         </div>
 
         <div className="mt-8 flex justify-end space-x-4">
