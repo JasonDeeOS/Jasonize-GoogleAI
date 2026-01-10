@@ -38,6 +38,7 @@ const NoteViewModal: React.FC<NoteViewModalProps> = ({ isOpen, onClose, onEdit, 
   };
 
   if (!isOpen || !note) return null;
+  const isShoppingList = note.noteType === NoteType.ShoppingList;
 
   const handleDelete = () => {
     onDelete();
@@ -289,7 +290,7 @@ const NoteViewModal: React.FC<NoteViewModalProps> = ({ isOpen, onClose, onEdit, 
       onClick={onClose}
     >
       <div
-        className="bg-surface rounded-t-lg sm:rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-slide-in-up"
+        className={`bg-surface shadow-xl w-full flex flex-col animate-slide-in-up ${isShoppingList ? 'h-full max-w-none max-h-none rounded-none' : 'max-w-2xl max-h-[90vh] rounded-t-lg sm:rounded-lg'}`}
         onClick={e => e.stopPropagation()}
       >
         <header className="p-4 border-b border-on-background/20 flex justify-between items-center flex-shrink-0">

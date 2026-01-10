@@ -9,7 +9,7 @@ type Candidate = {
     item: Note | Tombstone;
 };
 
-const POLL_INTERVAL_MS = 30000;
+const POLL_INTERVAL_MS = 10000;
 const PENDING_DEBOUNCE_MS = 500;
 const TOMBSTONE_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -44,12 +44,13 @@ const migrateTombstones = (tombstones: any): Tombstone[] => {
         return [];
     }
     return tombstones.map(t => {
-        const deletedAt = t.deletedAt || t.updatedAt;
-        const updatedAt = t.updatedAt || t.deletedAt;
+        const now = new Date().toISOString();
+        const deletedAt = t.deletedAt || t.updatedAt || now;
+        const updatedAt = t.updatedAt || t.deletedAt || now;
         return {
             id: String(t.id),
-            deletedAt: deletedAt || new Date().toISOString(),
-            updatedAt: updatedAt || new Date().toISOString(),
+            deletedAt,
+            updatedAt,
         };
     });
 };
@@ -102,7 +103,11 @@ const resolveCandidates = (
 
     candidates.forEach(list => {
         list.sort((a, b) => {
-            const diff = Date.parse(b.updatedAt) - Date.parse(a.updatedAt);
+            const timeA = Date.parse(a.updatedAt);
+            const timeB = Date.parse(b.updatedAt);
+            const safeA = Number.isNaN(timeA) ? 0 : timeA;
+            const safeB = Number.isNaN(timeB) ? 0 : timeB;
+            const diff = safeB - safeA;
             if (diff !== 0) return diff;
             if (a.kind === b.kind) return 0;
             return a.kind === 'tombstone' ? -1 : 1;

@@ -19,8 +19,15 @@ export const useNotes = (isCloudConfigured: boolean) => {
         }
         return notes.map(note => {
             let migratedNote = { ...note };
+            const now = new Date().toISOString();
             if (!note.noteType) {
                 migratedNote.noteType = NoteType.Text;
+            }
+            if (!note.createdAt) {
+                migratedNote.createdAt = note.updatedAt || now;
+            }
+            if (!note.updatedAt) {
+                migratedNote.updatedAt = note.createdAt || now;
             }
             if (note.deletedAt === undefined) {
                 migratedNote.deletedAt = null;
