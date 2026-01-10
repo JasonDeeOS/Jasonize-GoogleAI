@@ -6,6 +6,7 @@ type Candidate = {
     id: string;
     kind: 'note' | 'tombstone';
     updatedAt: string;
+    isPending: boolean;
     item: Note | Tombstone;
 };
 
@@ -86,16 +87,16 @@ const resolveCandidates = (
     };
 
     remoteNotes.forEach(note => {
-        pushCandidate({ id: note.id, kind: 'note', updatedAt: note.updatedAt, item: note });
+        pushCandidate({ id: note.id, kind: 'note', updatedAt: note.updatedAt, isPending: false, item: note });
     });
     remoteTombstones.forEach(tombstone => {
-        pushCandidate({ id: tombstone.id, kind: 'tombstone', updatedAt: tombstone.updatedAt, item: tombstone });
+        pushCandidate({ id: tombstone.id, kind: 'tombstone', updatedAt: tombstone.updatedAt, isPending: false, item: tombstone });
     });
     pendingNotes.forEach(note => {
-        pushCandidate({ id: note.id, kind: 'note', updatedAt: note.updatedAt, item: note });
+        pushCandidate({ id: note.id, kind: 'note', updatedAt: note.updatedAt, isPending: !!note.isPendingSync, item: note });
     });
     pendingTombstones.forEach(tombstone => {
-        pushCandidate({ id: tombstone.id, kind: 'tombstone', updatedAt: tombstone.updatedAt, item: tombstone });
+        pushCandidate({ id: tombstone.id, kind: 'tombstone', updatedAt: tombstone.updatedAt, isPending: !!tombstone.isPendingSync, item: tombstone });
     });
 
     const notes: Note[] = [];
@@ -103,6 +104,9 @@ const resolveCandidates = (
 
     candidates.forEach(list => {
         list.sort((a, b) => {
+            if (a.isPending !== b.isPending) {
+                return a.isPending ? -1 : 1;
+            }
             const timeA = Date.parse(a.updatedAt);
             const timeB = Date.parse(b.updatedAt);
             const safeA = Number.isNaN(timeA) ? 0 : timeA;

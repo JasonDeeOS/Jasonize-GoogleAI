@@ -413,6 +413,7 @@ const App: React.FC = () => {
           handleSaveNote(updatedNote, location, true);
           setActiveNote(updatedNote);
         }}
+        onRequestSync={syncCloudNotes}
         location={activeNoteLocation}
         onMoveToCloud={() => activeNote && activeNoteLocation === 'local' && handleMoveNoteToCloud(activeNote.id)}
       />

@@ -12,11 +12,12 @@ interface NoteViewModalProps {
   onDelete: () => void;
   note: Note | null;
   onUpdateNote: (updatedNote: Note) => void;
+  onRequestSync?: () => void;
   onMoveToCloud?: () => void;
   location?: 'local' | 'cloud' | null;
 }
 
-const NoteViewModal: React.FC<NoteViewModalProps> = ({ isOpen, onClose, onEdit, onDelete, note, onUpdateNote, onMoveToCloud, location }) => {
+const NoteViewModal: React.FC<NoteViewModalProps> = ({ isOpen, onClose, onEdit, onDelete, note, onUpdateNote, onRequestSync, onMoveToCloud, location }) => {
   const [categorySortOrder, setCategorySortOrder] = useState<string[]>([]);
 
   // Load category sort order from localStorage
@@ -99,6 +100,9 @@ const NoteViewModal: React.FC<NoteViewModalProps> = ({ isOpen, onClose, onEdit, 
     const remainingItems = items.filter(item => !item.completed);
     const updatedNote = { ...note, content: remainingItems, updatedAt: new Date().toISOString() };
     onUpdateNote(updatedNote);
+    if (location === 'cloud' && onRequestSync) {
+      onRequestSync();
+    }
   };
 
   const handleQuantityChange = (itemId: string, delta: number) => {
